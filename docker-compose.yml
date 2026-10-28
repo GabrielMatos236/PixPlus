@@ -1,0 +1,73 @@
+services:
+  auth-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: auth
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth -d auth"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  contas-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: contas
+      POSTGRES_USER: contas
+      POSTGRES_PASSWORD: ${CONTAS_DB_PASSWORD}
+    ports:
+      - "5434:5432"
+    volumes:
+      - contas-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U contas -d contas"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  transferencias-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: transferencias
+      POSTGRES_USER: transferencias
+      POSTGRES_PASSWORD: ${TRANSFERENCIAS_DB_PASSWORD}
+    ports:
+      - "5435:5432"
+    volumes:
+      - transferencias-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transferencias -d transferencias"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  notificacoes-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: notificacoes
+      POSTGRES_USER: notificacoes
+      POSTGRES_PASSWORD: ${NOTIFICACOES_DB_PASSWORD}
+    ports:
+      - "5436:5432"
+    volumes:
+      - notificacoes-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notificacoes -d notificacoes"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+# Os serviços (auth, contas, transferencias, notificacoes), o worker e o nginx
+# entram aqui nas próximas etapas.
+
+volumes:
+  auth-data:
+  contas-data:
+  transferencias-data:
+  notificacoes-data:
