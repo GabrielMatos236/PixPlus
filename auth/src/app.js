@@ -1,4 +1,6 @@
 import express from 'express'
+import cors from 'cors'
+import { config } from './config.js'
 import { pool } from './db.js'
 import { rotasUsuarios } from './usuarios/rotas.js'
 import { tratarErros } from './erros.js'
@@ -7,6 +9,10 @@ import { tratarErros } from './erros.js'
 export function criarApp() {
   const app = express()
   app.disable('x-powered-by') // não anuncia que é Express
+  app.use(cors({
+    origin: config.CORS_ORIGINS, // só as origens da lista
+    optionsSuccessStatus: 200,
+  }))
   app.use(express.json({ limit: '10kb' }))
 
   app.get('/auth/saude', async (req, res) => {
