@@ -11,3 +11,11 @@ export async function criarUsuario({ nome, email, cpf, senhaHash }) {
   )
   return rows[0]
 }
+
+export async function buscarPorEmail(email) {
+  const { rows } = await pool.query(
+    'SELECT id, senha_hash FROM usuario WHERE email = $1',
+    [email]
+  )
+  return rows[0] // undefined quando o e-mail não existe
+}

@@ -5,6 +5,7 @@ import { z } from 'zod'
 const esquema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   PORT: z.coerce.number().int().positive().default(3000),
+  JWT_SECRET: z.string().min(32, 'precisa ter pelo menos 32 caracteres'),
 })
 
 const resultado = esquema.safeParse(process.env)
