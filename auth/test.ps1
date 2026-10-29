@@ -16,6 +16,7 @@ docker compose exec -T auth-db createdb -U auth auth_test *> $null
 Pop-Location
 
 $env:DATABASE_URL = "postgres://auth:$senha@localhost:5433/auth_test"
+$env:JWT_SECRET = 'segredo-so-para-os-testes-automatizados'
 Set-Location $PSScriptRoot
 npm test
 exit $LASTEXITCODE

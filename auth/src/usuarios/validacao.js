@@ -28,3 +28,8 @@ export const esquemaCadastro = z.object({
     .min(8, 'a senha precisa ter pelo menos 8 caracteres')
     .max(128, 'a senha pode ter no máximo 128 caracteres'),
 })
+
+export const esquemaLogin = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email('e-mail inválido')),
+  senha: z.string().min(1, 'informe a senha').max(128, 'senha muito longa'),
+})

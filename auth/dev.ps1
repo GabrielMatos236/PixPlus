@@ -10,6 +10,8 @@ if (-not $linha) {
 }
 $senha = $linha.Matches[0].Groups[1].Value.Trim()
 $env:DATABASE_URL = "postgres://auth:$senha@localhost:5433/auth"
+$linhaSegredo = Select-String -Path $arquivoEnv -Pattern '^JWT_SECRET=(.*)$'
+$env:JWT_SECRET = $linhaSegredo.Matches[0].Groups[1].Value.Trim()
 
 Set-Location $PSScriptRoot
 
