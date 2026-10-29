@@ -6,6 +6,11 @@ const esquema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   PORT: z.coerce.number().int().positive().default(3000),
   JWT_SECRET: z.string().min(32, 'precisa ter pelo menos 32 caracteres'),
+  CORS_ORIGINS: z
+    .string()
+    .default('http://localhost:5173')
+    .transform((lista) => lista.split(',').map((origem) => origem.trim()))
+    .pipe(z.array(z.url({ protocol: /^https?$/, error: 'cada origem precisa começar com http:// ou https://' }))),
 })
 
 const resultado = esquema.safeParse(process.env)
