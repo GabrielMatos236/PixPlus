@@ -16,7 +16,27 @@ Modelo para cada rota:
 
 ## Auth
 
-(preencher)
+Formato de erro de todos os endpoints: `{ "erro": "mensagem" }`. Erros de validação trazem também `"detalhes": [{ "campo": "...", "mensagem": "..." }]`.
+
+### GET /auth/saude
+- Autenticação: não
+- Resposta 200: `{ "servico": "auth", "banco": true }`
+
+### POST /auth/cadastro
+- Autenticação: não
+- Corpo: `{ "nome": "string", "email": "string", "cpf": "string", "senha": "string" }`
+  - `nome`: 2 a 100 caracteres
+  - `email`: e-mail válido; é guardado em minúsculas
+  - `cpf`: com ou sem pontuação; dígitos verificadores conferidos
+  - `senha`: 8 a 128 caracteres; guardada só como hash argon2id
+- Resposta 201: `{ "id": "uuid", "nome": "string", "email": "string", "criado_em": "data ISO" }`
+- Erros: 400 (dados inválidos ou JSON malformado), 409 (e-mail ou cpf já cadastrado)
+
+### POST /auth/login
+(em construção)
+
+### GET /auth/eu
+(em construção)
 
 ## Contas
 
