@@ -80,6 +80,23 @@ services:
       timeout: 3s
       retries: 10
 
+  contas:
+    build: ./contas
+    environment:
+      DATABASE_URL: postgres://contas:${CONTAS_DB_PASSWORD}@contas-db:5432/contas
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    depends_on:
+      contas-db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3002:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/contas/saude || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 # Os serviços contas, transferencias e notificacoes, o worker e o nginx
 # entram aqui nas próximas etapas.
 
