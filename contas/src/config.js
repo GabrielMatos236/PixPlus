@@ -16,7 +16,7 @@ const esquema = z.object({
 const resultado = esquema.safeParse(process.env)
 
 if (!resultado.success) {
-  console.error('[auth] configuração inválida:')
+  console.error('[contas] configuração inválida:')
   for (const problema of resultado.error.issues) {
     console.error(`  - ${problema.path.join('.')}: ${problema.message}`)
   }

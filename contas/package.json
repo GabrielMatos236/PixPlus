@@ -1,7 +1,7 @@
 {
-  "name": "auth",
+  "name": "contas",
   "version": "1.0.0",
-  "description": "Serviço de autenticação do Banco Pix: cadastro, login e JWT",
+  "description": "Serviço de contas do Banco Pix: contas, lançamentos, saldo e extrato",
   "scripts": {
     "test": "node-pg-migrate up --no-verbose && node --test --test-concurrency=1",
     "start": "node src/server.js",
@@ -10,7 +10,6 @@
   },
   "type": "module",
   "dependencies": {
-    "argon2": "^0.45.1",
     "cors": "^2.8.6",
     "express": "^5.3.0",
     "jsonwebtoken": "^9.0.3",

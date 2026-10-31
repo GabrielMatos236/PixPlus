@@ -22,6 +22,6 @@ export function tratarErros(erro, req, res, next) {
     return res.status(400).json({ erro: 'corpo da requisição não é um JSON válido' })
   }
 
-  console.error('[auth] erro inesperado:', erro)
+  console.error('[contas] erro inesperado:', erro)
   res.status(500).json({ erro: 'erro interno' })
 }
