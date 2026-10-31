@@ -19,3 +19,11 @@ export async function buscarPorEmail(email) {
   )
   return rows[0] // undefined quando o e-mail não existe
 }
+
+export async function buscarPorId(id) {
+  const { rows } = await pool.query(
+    'SELECT id, nome, email, criado_em FROM usuario WHERE id = $1',
+    [id]
+  )
+  return rows[0] // undefined quando o usuário não existe mais
+}
