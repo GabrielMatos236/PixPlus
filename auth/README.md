@@ -1,6 +1,6 @@
 # Serviço Auth
 
-Cadastro, login e emissão de JWT. Dono: pessoa C.
+Cadastro, login, emissão de JWT e o middleware `validarToken` que os outros serviços copiam (veja `docs/autenticacao.md`). Dono: pessoa C.
 
 ## Estrutura
 
@@ -13,6 +13,8 @@ auth/
 │   ├── erros.js         # ErroHttp + middleware que transforma erros em respostas
 │   ├── app.js           # monta o Express (rotas, JSON, 404, erros), sem abrir porta
 │   ├── server.js        # abre a porta e desliga educadamente ao receber SIGTERM
+│   ├── autenticacao/
+│   │   └── validarToken.js # confere o JWT; copiado pelos outros serviços
 │   └── usuarios/
 │       ├── validacao.js # regras dos dados de entrada (zod) e dígitos do CPF
 │       ├── repositorio.js # todo o SQL da tabela usuario
@@ -64,6 +66,8 @@ Bloco para o `docker-compose.yml` da raiz:
     build: ./auth
     environment:
       DATABASE_URL: postgres://auth:${AUTH_DB_PASSWORD}@auth-db:5432/auth
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
     depends_on:
       auth-db:
         condition: service_healthy
