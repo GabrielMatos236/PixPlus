@@ -43,7 +43,9 @@ Formato de erro de todos os endpoints: `{ "erro": "mensagem" }`. Erros de valida
 - Erros: 400 (dados inválidos), 401 (e-mail ou senha incorretos; mesma resposta para e-mail inexistente e senha errada)
 
 ### GET /auth/eu
-(em construção)
+- Autenticação: sim, `Authorization: Bearer <token>`
+- Resposta 200: `{ "id": "uuid", "nome": "string", "email": "string", "criado_em": "data ISO" }`
+- Erros: 401 (`token ausente`, `token inválido` ou `token expirado`), 404 (usuário do token não existe mais)
 
 ## Contas
 

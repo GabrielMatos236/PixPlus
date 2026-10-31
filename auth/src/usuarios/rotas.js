@@ -2,7 +2,8 @@ import { Router } from 'express'
 import argon2 from 'argon2'
 import jwt from 'jsonwebtoken'
 import { esquemaCadastro, esquemaLogin } from './validacao.js'
-import { criarUsuario, buscarPorEmail } from './repositorio.js'
+import { criarUsuario, buscarPorEmail, buscarPorId } from './repositorio.js'
+import { criarValidarToken } from '../autenticacao/validarToken.js'
 import { ErroHttp } from '../erros.js'
 import { config } from '../config.js'
 
@@ -11,6 +12,8 @@ const DUPLICADO = '23505' // código do Postgres para violação de UNIQUE
 // Hash de uma senha qualquer, usado quando o e-mail não existe.
 // Assim o login demora o mesmo tempo nos dois casos e não denuncia quais e-mails têm conta.
 const HASH_FALSO = await argon2.hash('senha-que-ninguem-usa')
+
+const validarToken = criarValidarToken(config.JWT_SECRET)
 
 export const rotasUsuarios = Router()
 
@@ -51,4 +54,10 @@ rotasUsuarios.post('/auth/login', async (req, res) => {
 
   const token = jwt.sign({ sub: usuario.id }, config.JWT_SECRET, { expiresIn: '1h' })
   res.json({ token })
+})
+
+rotasUsuarios.get('/auth/eu', validarToken, async (req, res) => {
+  const usuario = await buscarPorId(req.usuarioId) // o id vem do token, não da URL
+  if (!usuario) throw new ErroHttp(404, 'usuário não encontrado')
+  res.json(usuario)
 })
