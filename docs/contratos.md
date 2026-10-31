@@ -35,7 +35,12 @@ Formato de erro de todos os endpoints: `{ "erro": "mensagem" }`. Erros de valida
 - Erros: 400 (dados inválidos ou JSON malformado), 409 (e-mail ou cpf já cadastrado)
 
 ### POST /auth/login
-(em construção)
+- Autenticação: não
+- Corpo: `{ "email": "string", "senha": "string" }`
+- Resposta 200: `{ "token": "string" }`
+  - JWT HS256 com validade de 1 hora; o conteúdo leva só `sub` (id do usuário), `iat` e `exp`
+  - Os outros serviços conferem o token localmente com o mesmo `JWT_SECRET`, mandado no cabeçalho `Authorization: Bearer <token>`
+- Erros: 400 (dados inválidos), 401 (e-mail ou senha incorretos; mesma resposta para e-mail inexistente e senha errada)
 
 ### GET /auth/eu
 (em construção)
