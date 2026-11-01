@@ -72,13 +72,21 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:3001:3000" # provisório, até o nginx existir
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/auth/saude || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      auth:
+        condition: service_healthy
 
   # Estes três ficam desligados até o dono entregar o serviço.
   # Quando o seu estiver na main, apague a linha "profiles".

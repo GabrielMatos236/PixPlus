@@ -85,10 +85,10 @@ Com o Auth no ar (`docker compose up -d`, porta 3001, ou `.\dev.ps1` na pasta `a
 Set-Content cadastro.json '{"nome": "Teste", "email": "teste@teste.com", "cpf": "529.982.247-25", "senha": "senhaforte123"}'
 Set-Content login.json '{"email": "teste@teste.com", "senha": "senhaforte123"}'
 
-curl.exe -X POST http://localhost:3001/auth/cadastro -H "Content-Type: application/json" -d "@cadastro.json"
-$token = (curl.exe -s -X POST http://localhost:3001/auth/login -H "Content-Type: application/json" -d "@login.json" | ConvertFrom-Json).token
+curl.exe -X POST http://localhost/auth/cadastro -H "Content-Type: application/json" -d "@cadastro.json"
+$token = (curl.exe -s -X POST http://localhost/auth/login -H "Content-Type: application/json" -d "@login.json" | ConvertFrom-Json).token
 
-curl.exe http://localhost:3001/auth/eu -H "Authorization: Bearer $token"
+curl.exe http://localhost/auth/eu -H "Authorization: Bearer $token"
 ```
 
 Depois use o mesmo `$token` nas rotas do seu serviço.
