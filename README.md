@@ -168,6 +168,29 @@ Suba tudo:
 docker compose up -d
 docker compose ps
 ```
+### Testar que subiu
+
+Tudo entra pelo nginx, na porta 80. Não existe mais porta direta nos serviços:
+
+```powershell
+curl.exe http://localhost/auth/saude
+```
+
+Deve responder `{"servico":"auth","banco":true}`. As rotas de Contas, Transferências e Notificações respondem 502 até cada dono entregar o serviço, e isso é esperado.
+
+Os serviços ainda não entregues ficam no perfil `completo` do compose. Quem entregar o seu apaga a linha `profiles` do bloco dele no mesmo PR.
+
+### Rodar o front
+
+Com o `docker compose up -d` ligado:
+
+```powershell
+cd front
+npm install
+npm run dev
+```
+
+Abre em `http://localhost:5173`. O Vite repassa `/auth`, `/contas`, `/transferencias` e `/notificacoes` para o nginx, então o front não depende de CORS.
 
 Na coluna de status, todos os bancos têm que ficar `healthy` (leva alguns segundos). O `-d` deixa rodando em segundo plano.
 
@@ -233,6 +256,8 @@ Conta com saldo abaixo de zero é o furo da versão ingênua.
 | `k6` ou outro comando "não é reconhecido" | Feche e abra o PowerShell. Se continuar, instale de novo com o ID certo do `winget search` |
 | `port is already allocated` | Outra coisa usa a porta (ex.: um Postgres instalado no PC). Mude a porta da esquerda no `docker-compose.yml` |
 | Serviço não conecta no banco | Confira o `.env` e se o banco está `healthy` no `docker compose ps` |
+| `curl` em `localhost` não conecta, ou o `nginx` não sobe | Veja `docker compose logs nginx`. Se for `port is already allocated`, outra coisa usa a porta 80 (IIS, Skype). Feche ela, ou mude só na sua máquina `"80:80"` para `"8080:80"` no compose e use `localhost:8080` (não commite essa troca) |
+| `/contas/saude` ou outro serviço dá 502 | O serviço ainda não foi entregue (está no perfil `completo`) ou está fora do ar. Confira com `docker compose ps` |
 
 ## Regras do grupo
 
