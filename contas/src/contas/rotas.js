@@ -2,8 +2,21 @@ import { Router } from 'express'
 import { config } from '../config.js'
 import { criarValidarToken } from '../autenticacao/validarToken.js'
 import { ErroHttp } from '../erros.js'
-import { esquemaCriarConta, validar } from './validacao.js'
-import { criarConta, buscarContaPorId } from './repositorio.js'
+import {
+  esquemaCriarConta,
+  esquemaDeposito,
+  esquemaPaginacao,
+  validar,
+} from './validacao.js'
+import {
+  criarConta,
+  buscarContaPorId,
+  buscarContaPorChave,
+  criarLancamento,
+  calcularSaldo,
+  listarExtrato,
+  verificacao,
+} from './repositorio.js'
 
 export const rotasContas = Router()
 const validarToken = criarValidarToken(config.JWT_SECRET)
@@ -50,4 +63,40 @@ rotasContas.get('/contas/:id', async (req, res) => {
     throw new ErroHttp(403, 'esta conta não é sua')
   }
   res.json(conta)
+})
+
+rotasContas.post('/contas/:id/depositos', async (req, res) => {
+  const { valor } = validar(esquemaDeposito, req.body)
+
+  const conta = await buscarContaPorId(req.params.id)
+  if (!conta) throw new ErroHttp(404, 'conta não encontrada')
+  if (conta.usuario_id !== req.usuarioId) {
+    throw new ErroHttp(403, 'esta conta não é sua')
+  }
+
+  const lancamento = await criarLancamento(conta.id, 'credito', valor)
+  res.status(201).json(lancamento)
+})
+
+rotasContas.get('/contas/:id/saldo', async (req, res) => {
+  const conta = await buscarContaPorId(req.params.id)
+  if (!conta) throw new ErroHttp(404, 'conta não encontrada')
+  if (conta.usuario_id !== req.usuarioId) {
+    throw new ErroHttp(403, 'esta conta não é sua')
+  }
+
+  const saldo = await calcularSaldo(conta.id)
+  res.json({ conta_id: conta.id, saldo })
+})
+
+rotasContas.get('/contas/:id/extrato', async (req, res) => {
+  const conta = await buscarContaPorId(req.params.id)
+  if (!conta) throw new ErroHttp(404, 'conta não encontrada')
+  if (conta.usuario_id !== req.usuarioId) {
+    throw new ErroHttp(403, 'esta conta não é sua')
+  }
+
+  const { pagina, limite } = validar(esquemaPaginacao, req.query)
+  const extrato = await listarExtrato(conta.id, pagina, limite)
+  res.json(extrato)
 })

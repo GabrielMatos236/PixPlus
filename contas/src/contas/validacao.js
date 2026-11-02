@@ -1,3 +1,6 @@
+import { z } from 'zod'
+import { ErroHttp } from '../erros.js'
+
 export const esquemaCriarConta = z.object({
   chave_pix: z
     .string({ required_error: 'chave_pix é obrigatória' })
@@ -17,3 +20,15 @@ export function validar(esquema, dados) {
 
   throw new ErroHttp(400, 'dados inválidos', detalhes)
 }
+
+export const esquemaDeposito = z.object({
+  valor: z
+    .number({ required_error: 'valor é obrigatório' })
+    .int('valor deve ser inteiro (centavos)')
+    .positive('valor deve ser maior que zero'),
+})
+
+export const esquemaPaginacao = z.object({
+  pagina: z.coerce.number().int().positive().default(1),
+  limite: z.coerce.number().int().min(1).max(100).default(20),
+})
