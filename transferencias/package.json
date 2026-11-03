@@ -1,0 +1,27 @@
+{
+  "name": "transferencias",
+  "version": "1.0.0",
+  "description": "Serviço de transferências do Banco Pix: Pix, idempotência e outbox de eventos",
+  "scripts": {
+    "test": "node-pg-migrate up --no-verbose && node --test --test-concurrency=1",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "migrate": "node-pg-migrate up --no-verbose",
+    "worker": "node src/worker/index.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

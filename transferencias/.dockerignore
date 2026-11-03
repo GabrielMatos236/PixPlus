@@ -1,0 +1,5 @@
+node_modules
+test
+*.ps1
+*.json.local
+cadastro.json

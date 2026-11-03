@@ -88,8 +88,6 @@ services:
       auth:
         condition: service_healthy
 
-  # Estes três ficam desligados até o dono entregar o serviço.
-  # Quando o seu estiver na main, apague a linha "profiles".
   contas:
     build: ./contas
     environment:
@@ -107,7 +105,6 @@ services:
 
   transferencias:
     build: ./transferencias
-    profiles: ["completo"]
     environment:
       DATABASE_URL: postgres://transferencias:${TRANSFERENCIAS_DB_PASSWORD}@transferencias-db:5432/transferencias
       JWT_SECRET: ${JWT_SECRET}
@@ -121,6 +118,8 @@ services:
       timeout: 3s
       retries: 10
 
+  # Notificações fica desligado até a dona entregar o serviço.
+  # Quando estiver na main, apague a linha "profiles" do bloco dele.
   notificacoes:
     build: ./notificacoes
     profiles: ["completo"]
