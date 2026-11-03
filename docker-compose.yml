@@ -92,7 +92,6 @@ services:
   # Quando o seu estiver na main, apague a linha "profiles".
   contas:
     build: ./contas
-    profiles: ["completo"]
     environment:
       DATABASE_URL: postgres://contas:${CONTAS_DB_PASSWORD}@contas-db:5432/contas
       JWT_SECRET: ${JWT_SECRET}
