@@ -72,14 +72,24 @@ services:
     depends_on:
       auth-db:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:3001:3000" # provisório, até o nginx existir
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/auth/saude || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
 
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      auth:
+        condition: service_healthy
+
+  # Estes três ficam desligados até o dono entregar o serviço.
+  # Quando o seu estiver na main, apague a linha "profiles".
   contas:
     build: ./contas
     environment:
@@ -89,16 +99,43 @@ services:
     depends_on:
       contas-db:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:3002:3000"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/contas/saude || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
 
-# Os serviços contas, transferencias e notificacoes, o worker e o nginx
-# entram aqui nas próximas etapas.
+  transferencias:
+    build: ./transferencias
+    profiles: ["completo"]
+    environment:
+      DATABASE_URL: postgres://transferencias:${TRANSFERENCIAS_DB_PASSWORD}@transferencias-db:5432/transferencias
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    depends_on:
+      transferencias-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/transferencias/saude || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  notificacoes:
+    build: ./notificacoes
+    profiles: ["completo"]
+    environment:
+      DATABASE_URL: postgres://notificacoes:${NOTIFICACOES_DB_PASSWORD}@notificacoes-db:5432/notificacoes
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    depends_on:
+      notificacoes-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/notificacoes/saude || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   auth-data:
