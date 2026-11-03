@@ -49,8 +49,6 @@ Formato de erro de todos os endpoints: `{ "erro": "mensagem" }`. Erros de valida
 
 ## Contas
 
-## Contas
-
 Formato de erro igual ao do Auth: `{ "erro": "mensagem" }`, e erros de validação trazem `"detalhes"`.
 Rotas com autenticação usam `Authorization: Bearer <token>` e respondem 401 (`token ausente`, `token inválido` ou `token expirado`).
 Valores sempre em centavos (inteiro).
@@ -98,7 +96,74 @@ Valores sempre em centavos (inteiro).
 
 ## Transferências
 
-(preencher)
+Formato de erro igual ao do Auth: `{ "erro": "mensagem" }`, e erros de validação trazem `"detalhes"`.
+
+### GET /transferencias/saude
+- Autenticação: não
+- Resposta 200: `{ "servico": "transferencias", "banco": true }`
+
+`POST /transferencias` e `GET /transferencias/{id}` entram na etapa 2, junto com o contrato de `POST /interno/movimentacoes` fechado com Contas.
+
+### Eventos (outbox)
+
+Quando uma transferência muda para `concluida`, Transferências grava um evento na tabela `outbox` **na mesma transação** que muda o status. Ou entram os dois, ou nenhum. O worker (`transferencias/src/worker`, `npm run worker`) lê a outbox e entrega cada evento em Notificações. Assim o Pix não depende de Notificações estar no ar.
+
+#### Evento `transferencia.concluida`
+O worker manda em `POST /interno/eventos` de Notificações:
+
+```json
+{
+  "id": "uuid do evento (outbox.id)",
+  "tipo": "transferencia.concluida",
+  "dados": {
+    "transferencia_id": "uuid",
+    "usuario_origem": "uuid",
+    "usuario_destino": "uuid",
+    "chave_destino": "string",
+    "valor": 2500,
+    "concluida_em": "data ISO"
+  }
+}
+```
+
+#### Garantias
+- Entrega **pelo menos uma vez**: o mesmo evento pode chegar mais de uma vez (o worker pode entregar e cair antes de marcar como processado).
+- Notificações ignora `id` repetido (coluna única) e mesmo assim **responde 2xx**. Se responder erro, o worker entende como falha e tenta de novo para sempre.
+- Qualquer resposta 2xx conta como entregue. Qualquer outra coisa, ou timeout, conta como falha.
+- Não há garantia de ordem entre eventos.
+
+#### Tabela `outbox` (banco de Transferências)
+| Coluna | Uso |
+| --- | --- |
+| `id` | UUID, é o id do evento |
+| `tipo` | ex.: `transferencia.concluida` |
+| `dados` | JSONB com o conteúdo do evento |
+| `status` | `pendente`, `processado` ou `erro` |
+| `tentativas` | quantas entregas falharam |
+| `disponivel_em` | o worker só pega o evento a partir deste horário |
+| `ultimo_erro` | mensagem da última falha |
+| `criado_em`, `processado_em` | datas; `processado_em` só existe com status `processado` |
+
+#### Regras do worker
+1. Numa transação, pega até 50 eventos com `status = 'pendente' AND disponivel_em <= now()`, ordenados por `disponivel_em`, com `FOR UPDATE SKIP LOCKED`. Várias cópias do worker podem rodar juntas sem pegar o mesmo evento.
+2. Entrega cada um em `POST /interno/eventos`.
+3. Deu certo: `status = 'processado'`, `processado_em = now()`.
+4. Falhou: `tentativas + 1`, `ultimo_erro`, e `disponivel_em = now() + 2^tentativas segundos` (1 s, 2 s, 4 s... cerca de 17 minutos até a 10ª). Na 10ª falha, `status = 'erro'`.
+5. Sem eventos disponíveis, espera um pouco antes da próxima rodada.
+
+Para testar o worker sem o Pix pronto, dá para inserir eventos falsos direto no banco:
+
+```sql
+INSERT INTO outbox (tipo, dados)
+SELECT 'transferencia.concluida', jsonb_build_object(
+  'transferencia_id', gen_random_uuid(),
+  'usuario_origem', gen_random_uuid(),
+  'usuario_destino', gen_random_uuid(),
+  'chave_destino', 'teste@pix',
+  'valor', 2500,
+  'concluida_em', now())
+FROM generate_series(1, 10000);
+```
 
 ## Notificações
 

@@ -176,7 +176,7 @@ Tudo entra pelo nginx, na porta 80. Não existe mais porta direta nos serviços:
 curl.exe http://localhost/auth/saude
 ```
 
-Deve responder `{"servico":"auth","banco":true}`. As rotas de Contas, Transferências e Notificações respondem 502 até cada dono entregar o serviço, e isso é esperado.
+Deve responder `{"servico":"auth","banco":true}`. As rotas de Notificações respondem 502 até a dona entregar o serviço, e isso é esperado.
 
 Os serviços ainda não entregues ficam no perfil `completo` do compose. Quem entregar o seu apaga a linha `profiles` do bloco dele no mesmo PR.
 
