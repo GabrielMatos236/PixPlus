@@ -117,6 +117,26 @@ test('status falhou exige motivo, e só ele pode ter motivo', async () => {
   )
 })
 
+test('qualquer UPDATE atualiza atualizada_em sozinho', async () => {
+  const t = await inserirTransferencia(novaTransferencia())
+  // finge que a última mudança foi 5 minutos atrás; desliga o trigger um instante,
+  // senão ele mesmo trocaria esse valor por now()
+  await pool.query('ALTER TABLE transferencia DISABLE TRIGGER transferencia_atualizada_em')
+  await pool.query(
+    `UPDATE transferencia SET atualizada_em = now() - interval '5 minutes' WHERE id = $1`,
+    [t.id],
+  )
+  await pool.query('ALTER TABLE transferencia ENABLE TRIGGER transferencia_atualizada_em')
+
+  // um UPDATE que nem cita a coluna, como o código da etapa 2 vai fazer
+  const { rows } = await pool.query(
+    `UPDATE transferencia SET status = 'concluida' WHERE id = $1
+     RETURNING atualizada_em > now() - interval '1 second' AS recente`,
+    [t.id],
+  )
+  assert.equal(rows[0].recente, true)
+})
+
 // ─── outbox ──────────────────────────────────────────────────
 
 test('evento nasce pendente, disponível agora e sem tentativas', async () => {
