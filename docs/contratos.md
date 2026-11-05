@@ -52,6 +52,8 @@ Formato de erro de todos os endpoints: `{ "erro": "mensagem" }`. Erros de valida
 Formato de erro igual ao do Auth: `{ "erro": "mensagem" }`, e erros de validação trazem `"detalhes"`.
 Rotas com autenticação usam `Authorization: Bearer <token>` e respondem 401 (`token ausente`, `token inválido` ou `token expirado`).
 Valores sempre em centavos (inteiro).
+Cada usuário tem **no máximo uma conta**. A chave pix é gravada e buscada sem espaços nas pontas e em minúsculas (`" Maria@Pix "` vira `maria@pix`).
+Id de conta que não é UUID responde como conta inexistente (404).
 
 ### GET /contas/saude
 - Autenticação: não
@@ -59,9 +61,15 @@ Valores sempre em centavos (inteiro).
 
 ### POST /contas
 - Autenticação: sim
-- Corpo: `{ "chave_pix": "string" }` (1 a 140 caracteres)
+- Corpo: `{ "chave_pix": "string" }` (1 a 140 caracteres, depois de normalizada)
 - Resposta 201: `{ "id": "uuid", "usuario_id": "uuid", "chave_pix": "string", "criada_em": "data ISO" }`
-- Erros: 400 (dados inválidos), 401, 409 (chave pix já cadastrada)
+- Erros: 400 (dados inválidos), 401, 409 (`chave pix já cadastrada` ou `você já tem uma conta`)
+
+### GET /contas/minha
+- Autenticação: sim
+- A conta de quem está logado. É por ela que o front descobre o id da conta.
+- Resposta 200: `{ "id": "uuid", "usuario_id": "uuid", "chave_pix": "string", "criada_em": "data ISO" }`
+- Erros: 401, 404 (`você ainda não tem conta`)
 
 ### GET /contas/{id}
 - Autenticação: sim
@@ -70,7 +78,7 @@ Valores sempre em centavos (inteiro).
 
 ### POST /contas/{id}/depositos
 - Autenticação: sim
-- Corpo: `{ "valor": 1000 }` (inteiro maior que zero)
+- Corpo: `{ "valor": 1000 }` (inteiro maior que zero, no máximo 100000000 = R$ 1.000.000,00)
 - Resposta 201: `{ "id": "uuid", "conta_id": "uuid", "tipo": "credito", "valor": 1000, "transferencia_id": null, "criado_em": "data ISO" }`
 - Erros: 400, 401, 403, 404
 
@@ -85,10 +93,11 @@ Valores sempre em centavos (inteiro).
 - Resposta 200: `{ "lancamentos": [{ "id", "tipo", "valor", "transferencia_id", "criado_em" }], "total": 0, "pagina": 1, "limite": 20, "paginas": 0 }`, do mais novo para o mais antigo
 - Erros: 400, 401, 403, 404
 
-### GET /interno/contas?chave=...
+### GET /interno/contas?chave=... ou ?usuario_id=...
 - Só entre serviços (usada por Transferências)
+- Exatamente um dos dois: `chave` acha a conta de destino de um Pix (normalizada como no cadastro); `usuario_id` acha a conta de origem (a do usuário logado)
 - Resposta 200: `{ "id": "uuid", "usuario_id": "uuid" }`
-- Erros: 400 (chave ausente), 404 (chave pix não encontrada)
+- Erros: 400 (nenhum ou os dois parâmetros, ou `usuario_id` que não é UUID), 404 (`chave pix não encontrada` ou `usuário sem conta`)
 
 ### GET /interno/verificacao
 - Só entre serviços (usada pelos testes de carga)
