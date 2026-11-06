@@ -1,12 +1,6 @@
 import jwt from 'jsonwebtoken'
 
 // Middleware que confere o crachá (JWT) antes da rota.
-// Este arquivo não depende de nada do Auth: os outros serviços copiam ele igual,
-// instalam a jsonwebtoken e usam o mesmo JWT_SECRET.
-//
-// Uso:
-//   const validarToken = criarValidarToken(process.env.JWT_SECRET)
-//   app.get('/contas/:id', validarToken, async (req, res) => { ... req.usuarioId ... })
 export function criarValidarToken(segredo) {
   if (!segredo) throw new Error('criarValidarToken precisa do JWT_SECRET')
 

@@ -1,7 +1,3 @@
-# MODELO. Copie para <servico>/Dockerfile. O serviço precisa ter:
-#   package.json + package-lock.json, pasta migrations/, src/server.js,
-#   escutar na porta 3000 (variável PORT) e responder GET /<servico>/saude
-
 FROM node:22-alpine
 
 WORKDIR /app
