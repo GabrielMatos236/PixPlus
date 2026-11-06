@@ -137,7 +137,7 @@ O worker manda em `POST /interno/eventos` de Notificações:
 
 #### Garantias
 - Entrega **pelo menos uma vez**: o mesmo evento pode chegar mais de uma vez (o worker pode entregar e cair antes de marcar como processado).
-- Notificações ignora `id` repetido (coluna única) e mesmo assim **responde 2xx**. Se responder erro, o worker entende como falha e tenta de novo para sempre.
+- Notificações ignora `id` repetido (coluna única) e mesmo assim **responde 2xx**. Se responder erro, o worker entende como falha e tenta de novo, até 10 vezes (ver "Regras do worker").
 - Qualquer resposta 2xx conta como entregue. Qualquer outra coisa, ou timeout, conta como falha.
 - Não há garantia de ordem entre eventos.
 
