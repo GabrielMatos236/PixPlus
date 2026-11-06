@@ -176,4 +176,38 @@ FROM generate_series(1, 10000);
 
 ## Notificações
 
-(preencher)
+Formato de erro: `{ "erro": "mensagem" }`.
+Rotas do usuário exigem `Authorization: Bearer <token>`.
+Cada usuário acessa apenas as próprias notificações.
+
+### GET /notificacoes/saude
+- Autenticação: não
+- Resposta 200: `{ "servico": "notificacoes", "banco": true }`
+- Resposta 503: `{ "servico": "notificacoes", "banco": false }`
+
+### GET /notificacoes?pagina=1&limite=20
+- Autenticação: sim
+- Lista as notificações do usuário logado, da mais nova para a mais antiga
+- `pagina`: inteiro a partir de 1, padrão 1
+- `limite`: inteiro de 1 a 100, padrão 20
+- Resposta 200:
+  `{ "notificacoes": [{ "id": "uuid", "mensagem": "string", "lida": false, "criada_em": "data ISO" }], "total": 1, "pagina": 1, "limite": 20, "paginas": 1 }`
+- Erros: 400 (paginação inválida), 401 (token ausente, inválido ou expirado)
+
+### PATCH /notificacoes/{id}
+- Autenticação: sim
+- Corpo: `{ "lida": true }`
+- Marca uma notificação do usuário logado como lida
+- Repetir a operação mantém a notificação lida e responde 200
+- Resposta 200:
+  `{ "id": "uuid", "mensagem": "string", "lida": true, "criada_em": "data ISO" }`
+- Erros: 400 (corpo inválido), 401, 404 (notificação inexistente ou pertencente a outro usuário)
+
+### POST /interno/eventos
+- Somente entre serviços, sem exposição pelo nginx
+- Corpo: evento `transferencia.concluida`, conforme o contrato de eventos de Transferências
+- Cria um aviso para o usuário de origem e outro para o usuário de destino
+- O evento e seus avisos são gravados na mesma transação
+- O id do evento é único: recebê-lo novamente não cria avisos duplicados
+- Resposta 204, sem corpo, tanto para evento novo quanto para evento já recebido
+- Erros: 400 (evento inválido)
