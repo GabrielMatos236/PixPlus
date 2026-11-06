@@ -1,24 +1,58 @@
 // Worker da outbox — dona: pessoa D. Revisão: pessoa C.
-//
-// Roda como processo separado do serviço (npm run worker), mas mora nesta pasta
-// porque lê o banco de Transferências. Pode rodar em várias cópias ao mesmo tempo.
-// Usa o mesmo src/db.js e src/config.js do serviço, então precisa das mesmas
-// variáveis de ambiente (DATABASE_URL e JWT_SECRET), mais o endereço de Notificações.
-//
-// O que ele faz está em docs/contratos.md, seção "Eventos (outbox)". Resumo:
-//   1. Numa transação, pega até 50 eventos pendentes e já disponíveis, travando com
-//      FOR UPDATE SKIP LOCKED (outra cópia do worker pula os que estão travados):
-//
-//        SELECT id, tipo, dados FROM outbox
-//        WHERE status = 'pendente' AND disponivel_em <= now()
-//        ORDER BY disponivel_em
-//        LIMIT 50
-//        FOR UPDATE SKIP LOCKED
-//
-//   2. Para cada um, POST /interno/eventos em Notificações com { id, tipo, dados }.
-//   3. Resposta 2xx:  status = 'processado', processado_em = now().
-//      Outra coisa:   tentativas + 1, ultimo_erro, disponivel_em = now() + 2^tentativas segundos.
-//                     Na 10ª falha, status = 'erro'.
-//   4. COMMIT, e repete. Sem eventos, espera um pouco antes da próxima rodada.
+import { setTimeout as esperar } from 'node:timers/promises'
+import { pool } from '../db.js'
+import { processarLote } from './processarLote.js'
 
-console.log('[worker] ainda não implementado')
+const urlNotificacoes =
+  process.env.NOTIFICACOES_URL || 'http://notificacoes:3000'
+
+const endereco = new URL(urlNotificacoes)
+
+if (!['http:', 'https:'].includes(endereco.protocol)) {
+  throw new Error('NOTIFICACOES_URL deve usar http ou https')
+}
+
+let executando = true
+
+function solicitarParada(sinal) {
+  console.log(`[worker] recebi ${sinal}, encerrando após o lote atual`)
+  executando = false
+}
+
+process.once('SIGTERM', () => solicitarParada('SIGTERM'))
+process.once('SIGINT', () => solicitarParada('SIGINT'))
+
+async function iniciar() {
+  console.log('[worker] iniciado')
+
+  try {
+    while (executando) {
+      try {
+        const resultado = await processarLote(urlNotificacoes)
+
+        if (resultado.encontrados > 0) {
+          console.log(
+            `[worker] processados: ${resultado.processados}, ` +
+            `falhas: ${resultado.falhas}`,
+          )
+        } else if (executando) {
+          await esperar(1000)
+        }
+      } catch (erro) {
+        console.error('[worker] falha ao processar lote:', erro)
+
+        if (executando) {
+          await esperar(2000)
+        }
+      }
+    }
+  } finally {
+    await pool.end()
+    console.log('[worker] encerrado')
+  }
+}
+
+iniciar().catch((erro) => {
+  console.error('[worker] falha ao encerrar:', erro)
+  process.exitCode = 1
+})
