@@ -119,11 +119,8 @@ services:
       timeout: 3s
       retries: 10
 
-  # Notificações fica desligado até a dona entregar o serviço.
-  # Quando estiver na main, apague a linha "profiles" do bloco dele.
   notificacoes:
     build: ./notificacoes
-    profiles: ["completo"]
     environment:
       DATABASE_URL: postgres://notificacoes:${NOTIFICACOES_DB_PASSWORD}@notificacoes-db:5432/notificacoes
       JWT_SECRET: ${JWT_SECRET}
@@ -139,7 +136,6 @@ services:
 
   worker-outbox:
     build: ./transferencias
-    profiles: ["completo"]
     command: ["node", "src/worker/index.js"]
     init: true
     restart: unless-stopped

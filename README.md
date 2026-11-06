@@ -176,9 +176,9 @@ Tudo entra pelo nginx, na porta 80. Não existe mais porta direta nos serviços:
 curl.exe http://localhost/auth/saude
 ```
 
-Deve responder `{"servico":"auth","banco":true}`. As rotas de Notificações respondem 502 até a dona entregar o serviço, e isso é esperado.
+Deve responder `{"servico":"auth","banco":true}`. Os outros três respondem igual em `/contas/saude`, `/transferencias/saude` e `/notificacoes/saude`.
 
-Os serviços ainda não entregues ficam no perfil `completo` do compose. Quem entregar o seu apaga a linha `profiles` do bloco dele no mesmo PR.
+O `docker compose up -d` sobe tudo: os quatro bancos, os quatro serviços, o worker da outbox (`worker-outbox`) e o nginx.
 
 ### Rodar o front
 
@@ -257,7 +257,7 @@ Conta com saldo abaixo de zero é o furo da versão ingênua.
 | `port is already allocated` | Outra coisa usa a porta (ex.: um Postgres instalado no PC). Mude a porta da esquerda no `docker-compose.yml` |
 | Serviço não conecta no banco | Confira o `.env` e se o banco está `healthy` no `docker compose ps` |
 | `curl` em `localhost` não conecta, ou o `nginx` não sobe | Veja `docker compose logs nginx`. Se for `port is already allocated`, outra coisa usa a porta 80 (IIS, Skype). Feche ela, ou mude só na sua máquina `"80:80"` para `"8080:80"` no compose e use `localhost:8080` (não commite essa troca) |
-| `/contas/saude` ou outro serviço dá 502 | O serviço ainda não foi entregue (está no perfil `completo`) ou está fora do ar. Confira com `docker compose ps` |
+| `/contas/saude` ou outro serviço dá 502 | O serviço está fora do ar ou ainda subindo. Confira com `docker compose ps` e veja o motivo com `docker compose logs <serviço>` |
 
 ## Regras do grupo
 
