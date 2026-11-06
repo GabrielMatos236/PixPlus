@@ -2,3 +2,4 @@
 node_modules/
 *.log
 .vscode/
+/carga/usuarios-seed-*.json
