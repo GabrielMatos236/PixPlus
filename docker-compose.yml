@@ -7,6 +7,7 @@ services:
       POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD}
     ports:
       - "5433:5432"
+
     volumes:
       - auth-data:/var/lib/postgresql/data
     healthcheck:
@@ -135,6 +136,23 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  worker-outbox:
+    build: ./transferencias
+    profiles: ["completo"]
+    command: ["node", "src/worker/index.js"]
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 5m
+    healthcheck:
+      disable: true
+    environment:
+      DATABASE_URL: postgres://transferencias:${TRANSFERENCIAS_DB_PASSWORD}@transferencias-db:5432/transferencias
+      JWT_SECRET: ${JWT_SECRET}
+      NOTIFICACOES_URL: http://notificacoes:3000
+    depends_on:
+      transferencias:
+        condition: service_healthy
 
 volumes:
   auth-data:
