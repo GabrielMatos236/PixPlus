@@ -32,13 +32,11 @@ export const esquemaMovimentacao = z.object({
     .string({ error: 'transferencia_id é obrigatória e deve ser texto' })
     .uuid('transferencia_id deve ser um UUID válido'),
   conta_origem: z
-    .number({ error: 'conta_origem é obrigatória e deve ser número' })
-    .int('conta_origem deve ser inteiro')
-    .positive('conta_origem deve ser maior que zero'),
+    .string({ error: 'conta_origem é obrigatória e deve ser texto' })
+    .uuid('conta_origem deve ser um UUID válido'),
   conta_destino: z
-    .number({ error: 'conta_destino é obrigatória e deve ser número' })
-    .int('conta_destino deve ser inteiro')
-    .positive('conta_destino deve ser maior que zero'),
+    .string({ error: 'conta_destino é obrigatória e deve ser texto' })
+    .uuid('conta_destino deve ser um UUID válido'),
   valor: z
     .number({ error: 'valor é obrigatório e deve ser número' })
     .int('valor deve ser inteiro (centavos)')

@@ -1,14 +1,16 @@
 FROM node:22-alpine
 
 WORKDIR /app
-ENV NODE_ENV=production
+COPY package.json package-lock.json ./
+RUN NODE_ENV=development npm ci
 
 # Dependências primeiro: se só o código mudar, o Docker reaproveita esta camada.
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 COPY migrations ./migrations
 COPY src ./src
+COPY test ./test
 
 # Não roda como root dentro do container.
 USER node
