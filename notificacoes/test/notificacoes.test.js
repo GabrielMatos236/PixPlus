@@ -119,3 +119,107 @@ test('evento repetido mantém um aviso para cada usuário', async () => {
   assert.equal(eventos.rows[0].total, 1)
   assert.equal(avisos.rows[0].total, 2)
 })
+
+test('exclusão exige token', async () => {
+  const resposta = await request(app)
+    .delete(`/notificacoes/${randomUUID()}`)
+
+  assert.equal(resposta.status, 401)
+  assert.equal(resposta.body.erro, 'token ausente')
+})
+
+test('dono exclui o aviso e reentrega não o recria', async () => {
+  const origem = novoUsuario()
+  const destino = novoUsuario()
+  const evento = novoEvento(origem, destino)
+
+  await enviarEvento(evento)
+
+  const lista = await request(app)
+    .get('/notificacoes')
+    .set('Authorization', origem.autorizacao)
+
+  assert.equal(lista.status, 200)
+  assert.equal(lista.body.total, 1)
+
+  const id = lista.body.notificacoes[0].id
+
+  const exclusao = await request(app)
+    .delete(`/notificacoes/${id}`)
+    .set('Authorization', origem.autorizacao)
+
+  assert.equal(exclusao.status, 204)
+  assert.equal(exclusao.text, '')
+
+  const repeticao = await request(app)
+    .delete(`/notificacoes/${id}`)
+    .set('Authorization', origem.autorizacao)
+
+  assert.equal(repeticao.status, 404)
+
+  const registro = await pool.query(
+    'SELECT id FROM evento_recebido WHERE id = $1',
+    [evento.id],
+  )
+
+  assert.equal(registro.rowCount, 1)
+
+  await enviarEvento(evento)
+
+  const listaOrigem = await request(app)
+    .get('/notificacoes')
+    .set('Authorization', origem.autorizacao)
+
+  assert.equal(listaOrigem.status, 200)
+  assert.equal(listaOrigem.body.total, 0)
+
+  const listaDestino = await request(app)
+    .get('/notificacoes')
+    .set('Authorization', destino.autorizacao)
+
+  assert.equal(listaDestino.status, 200)
+  assert.equal(listaDestino.body.total, 1)
+})
+
+test('outro usuário não consegue excluir o aviso', async () => {
+  const origem = novoUsuario()
+  const destino = novoUsuario()
+  const outro = novoUsuario()
+
+  await enviarEvento(novoEvento(origem, destino))
+
+  const lista = await request(app)
+    .get('/notificacoes')
+    .set('Authorization', origem.autorizacao)
+
+  assert.equal(lista.status, 200)
+  assert.equal(lista.body.total, 1)
+
+  const id = lista.body.notificacoes[0].id
+
+  const resposta = await request(app)
+    .delete(`/notificacoes/${id}`)
+    .set('Authorization', outro.autorizacao)
+
+  assert.equal(resposta.status, 404)
+
+  const registro = await pool.query(
+    'SELECT usuario_id FROM notificacao WHERE id = $1',
+    [id],
+  )
+
+  assert.equal(registro.rowCount, 1)
+  assert.equal(registro.rows[0].usuario_id, origem.id)
+})
+
+test('exclusão de id inválido ou inexistente retorna 404', async () => {
+  const usuario = novoUsuario()
+
+  for (const id of ['invalido', randomUUID()]) {
+    const resposta = await request(app)
+      .delete(`/notificacoes/${id}`)
+      .set('Authorization', usuario.autorizacao)
+
+    assert.equal(resposta.status, 404)
+  }
+})
