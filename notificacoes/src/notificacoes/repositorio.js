@@ -87,3 +87,14 @@ export async function receberEvento(evento) {
     cliente.release()
   }
 }
+
+export async function excluirNotificacao(id, usuarioId) {
+  const resultado = await pool.query(
+    `DELETE FROM notificacao
+     WHERE id = $1 AND usuario_id = $2
+     RETURNING id`,
+    [id, usuarioId],
+  )
+
+  return resultado.rowCount > 0
+}

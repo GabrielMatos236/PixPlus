@@ -5,6 +5,7 @@ import {
   listarNotificacoes,
   marcarComoLida,
   receberEvento,
+  excluirNotificacao,
 } from './repositorio.js'
 
 export const rotasNotificacoes = Router()
@@ -88,6 +89,25 @@ rotasEventos.post('/', async (req, res) => {
   }
 
   await receberEvento(validacao.data)
+
+  res.status(204).end()
+})
+
+rotasNotificacoes.delete('/:id', async (req, res) => {
+  const id = z.uuid().safeParse(req.params.id)
+
+  if (!id.success) {
+    throw new ErroHttp(404, 'notificação não encontrada')
+  }
+
+  const excluida = await excluirNotificacao(
+    id.data,
+    req.usuarioId,
+  )
+
+  if (!excluida) {
+    throw new ErroHttp(404, 'notificação não encontrada')
+  }
 
   res.status(204).end()
 })
