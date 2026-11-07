@@ -61,3 +61,71 @@ Rota interna (sem JWT). Chamada pelo serviço de Transferências para executar u
 - Débito e crédito são criados na mesma transação (BEGIN/COMMIT/ROLLBACK)
 - Versão ingênua: sem SELECT ... FOR UPDATE (lock será adicionado na Etapa 3)
 - Valores sempre em centavos (R$ 30,00 = 3000)
+
+
+## PATCH /contas/{id}
+
+Rota protegida (JWT). Troca a chave Pix da conta.
+
+### Request
+
+Header: `Authorization: Bearer <token>`
+
+```json
+{
+  "chave_pix": "nova-chave@email.com"
+}
+```
+
+### Respostas
+
+**200 OK**
+```json
+{
+  "id": "uuid",
+  "usuario_id": "uuid",
+  "chave_pix": "nova-chave@email.com",
+  "criada_em": "2026-11-07T..."
+}
+```
+
+**400** — corpo inválido
+**401** — token ausente ou inválido
+**403** — conta não pertence ao usuário
+**409** — chave pix já cadastrada em outra conta
+
+---
+
+## DELETE /contas/{id}
+
+Rota protegida (JWT). Encerra a conta (soft delete — marca `encerrada_em`).
+
+### Request
+
+Header: `Authorization: Bearer <token>`
+
+Sem body.
+
+### Respostas
+
+**200 OK**
+```json
+{
+  "id": "uuid",
+  "usuario_id": "uuid",
+  "chave_pix": "chave@email.com",
+  "criada_em": "2026-11-07T...",
+  "encerrada_em": "2026-11-07T..."
+}
+```
+
+**401** — token ausente ou inválido
+**403** — conta não pertence ao usuário
+**422** — saldo diferente de zero
+
+### Observações
+
+- Encerrar não apaga do banco: marca `encerrada_em` com a data atual
+- Conta encerrada não aparece em `/contas/minha` nem em `/interno/contas`
+- Conta encerrada não recebe Pix
+- O extrato continua acessível por `/contas/{id}/extrato`
