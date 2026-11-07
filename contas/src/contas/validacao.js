@@ -79,3 +79,7 @@ export function validar(esquema, dados) {
 
   throw new ErroHttp(400, 'dados inválidos', detalhes)
 }
+
+export const esquemaAtualizarChave = z.object({
+  chave_pix: chavePix,
+}, corpoObjeto)

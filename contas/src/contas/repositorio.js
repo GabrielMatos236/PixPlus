@@ -28,7 +28,8 @@ export async function buscarContaPorId(id) {
 // Cada usuário tem no máximo uma conta (UNIQUE no banco).
 export async function buscarContaPorUsuario(usuarioId) {
   const { rows } = await pool.query(
-    `SELECT id, usuario_id, chave_pix, criada_em FROM conta WHERE usuario_id = $1`,
+    `SELECT id, usuario_id, chave_pix, criada_em FROM conta
+     WHERE usuario_id = $1 AND encerrada_em IS NULL`,
     [usuarioId],
   )
   return rows[0] ?? null
@@ -37,8 +38,8 @@ export async function buscarContaPorUsuario(usuarioId) {
 // Usada pelas rotas internas: devolve só o que outro serviço precisa.
 export async function buscarContaInterna({ chave, usuarioId }) {
   const { rows } = chave !== undefined
-    ? await pool.query(`SELECT id, usuario_id FROM conta WHERE chave_pix = $1`, [chave])
-    : await pool.query(`SELECT id, usuario_id FROM conta WHERE usuario_id = $1`, [usuarioId])
+    ? await pool.query(`SELECT id, usuario_id FROM conta WHERE chave_pix = $1 AND encerrada_em IS NULL`, [chave])
+    : await pool.query(`SELECT id, usuario_id FROM conta WHERE usuario_id = $1 AND encerrada_em IS NULL`, [usuarioId])
   return rows[0] ?? null
 }
 
@@ -194,4 +195,22 @@ export async function executarMovimentacao(transferenciaId, contaOrigem, contaDe
   } finally {
     client.release()
   }
+}
+
+export async function atualizarChavePix(contaId, novaChave) {
+  const { rows } = await pool.query(
+    `UPDATE conta SET chave_pix = $1 WHERE id = $2
+     RETURNING id, usuario_id, chave_pix, criada_em`,
+    [novaChave, contaId],
+  )
+  return rows[0]
+}
+
+export async function encerrarConta(contaId) {
+  const { rows } = await pool.query(
+    `UPDATE conta SET encerrada_em = NOW() WHERE id = $1
+     RETURNING id, usuario_id, chave_pix, criada_em, encerrada_em`,
+    [contaId],
+  )
+  return rows[0]
 }

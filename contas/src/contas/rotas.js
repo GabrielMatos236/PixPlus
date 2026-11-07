@@ -8,6 +8,7 @@ import {
   esquemaPaginacao,
   esquemaBuscaInterna,
   esquemaMovimentacao,
+  esquemaAtualizarChave,
   validar,
 } from './validacao.js'
 import {
@@ -20,6 +21,8 @@ import {
   listarExtrato,
   verificacao,
   executarMovimentacao,
+  atualizarChavePix,
+  encerrarConta,
 } from './repositorio.js'
 
 
@@ -117,4 +120,29 @@ rotasContas.get('/contas/:id/extrato', async (req, res) => {
   const { pagina, limite } = validar(esquemaPaginacao, req.query)
   const extrato = await listarExtrato(conta.id, pagina, limite)
   res.json(extrato)
+})
+
+rotasContas.patch('/contas/:id', async (req, res) => {
+  const { chave_pix } = validar(esquemaAtualizarChave, req.body)
+  const conta = await contaDoUsuario(req)
+
+  try {
+    const atualizada = await atualizarChavePix(conta.id, chave_pix)
+    res.json(atualizada)
+  } catch (erro) {
+    if (erro.code === DUPLICADO) throw new ErroHttp(409, 'chave pix já cadastrada')
+    throw erro
+  }
+})
+
+rotasContas.delete('/contas/:id', async (req, res) => {
+  const conta = await contaDoUsuario(req)
+  const saldo = await calcularSaldo(conta.id)
+
+  if (saldo !== 0) {
+    throw new ErroHttp(422, 'conta só pode ser encerrada com saldo zero')
+  }
+
+  const encerrada = await encerrarConta(conta.id)
+  res.json(encerrada)
 })
