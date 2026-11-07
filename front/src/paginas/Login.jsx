@@ -22,12 +22,14 @@ export default function Login() {
 
   return (
     <form onSubmit={entrar}>
-      <h1>Entrar</h1>
+      <img className="logo" src="/zync-icone-app.svg" width="76" height="76" alt="Logo Zync" />
+      <div className="marca"><span>Z</span>ync</div>
+      <p className="sub">Seu dinheiro, na hora.</p>
       <input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
       <input type="password" placeholder="Senha" value={senha} onChange={(e) => setSenha(e.target.value)} required />
       {erro && <p role="alert">{erro}</p>}
       <button type="submit">Entrar</button>
-      <p>Não tem conta? <Link to="/cadastro">Cadastre-se</Link></p>
+      <p className="sub">Ainda não tem conta? <Link to="/cadastro">Criar conta</Link></p>
     </form>
   )
 }
