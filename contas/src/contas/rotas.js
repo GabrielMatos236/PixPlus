@@ -7,6 +7,7 @@ import {
   esquemaDeposito,
   esquemaPaginacao,
   esquemaBuscaInterna,
+  esquemaMovimentacao,
   validar,
 } from './validacao.js'
 import {
@@ -18,7 +19,9 @@ import {
   calcularSaldo,
   listarExtrato,
   verificacao,
+  executarMovimentacao,
 } from './repositorio.js'
+
 
 export const rotasContas = Router()
 const validarToken = criarValidarToken(config.JWT_SECRET)
@@ -49,6 +52,17 @@ rotasContas.get('/interno/contas', async (req, res) => {
 rotasContas.get('/interno/verificacao', async (req, res) => {
   const resultado = await verificacao()
   res.json(resultado)
+})
+
+rotasContas.post('/interno/movimentacoes', async (req, res) => {
+  const dados = validar(esquemaMovimentacao, req.body)
+  const resultado = await executarMovimentacao(
+    dados.transferencia_id,
+    dados.conta_origem,
+    dados.conta_destino,
+    dados.valor,
+  )
+  res.status(201).json(resultado)
 })
 
 // ─── Barreira do JWT ────────────────────────────────────

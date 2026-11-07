@@ -122,3 +122,76 @@ export async function verificacao() {
 
   return { soma_total: somaTotal, contas_negativas: contasNegativas }
 }
+
+// ─── Movimentação (débito + crédito atômicos) ───────────────
+
+export async function executarMovimentacao(transferenciaId, contaOrigem, contaDestino, valor) {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+
+    // 1. Buscar conta de origem
+    const { rows: [origem] } = await client.query(
+      'SELECT id, usuario_id FROM conta WHERE id = $1',
+      [contaOrigem],
+    )
+    if (!origem) {
+      const { ErroHttp } = await import('../erros.js')
+      throw new ErroHttp(404, 'conta de origem não encontrada')
+    }
+
+    // 2. Buscar conta de destino
+    const { rows: [destino] } = await client.query(
+      'SELECT id FROM conta WHERE id = $1',
+      [contaDestino],
+    )
+    if (!destino) {
+      const { ErroHttp } = await import('../erros.js')
+      throw new ErroHttp(404, 'conta de destino não encontrada')
+    }
+
+    // 3. Calcular saldo da origem
+    const { rows: [{ saldo }] } = await client.query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN tipo = 'credito' THEN valor ELSE 0 END), 0)
+         -
+         COALESCE(SUM(CASE WHEN tipo = 'debito' THEN valor ELSE 0 END), 0)
+         AS saldo
+       FROM lancamento
+       WHERE conta_id = $1`,
+      [contaOrigem],
+    )
+    const saldoAtual = parseInt(saldo, 10)
+
+    if (saldoAtual < valor) {
+      const { ErroHttp } = await import('../erros.js')
+      throw new ErroHttp(422, 'saldo insuficiente')
+    }
+
+    // 4. Débito na origem
+    await client.query(
+      `INSERT INTO lancamento (conta_id, tipo, valor, transferencia_id)
+       VALUES ($1, 'debito', $2, $3)`,
+      [contaOrigem, valor, transferenciaId],
+    )
+
+    // 5. Crédito no destino
+    await client.query(
+      `INSERT INTO lancamento (conta_id, tipo, valor, transferencia_id)
+       VALUES ($1, 'credito', $2, $3)`,
+      [contaDestino, valor, transferenciaId],
+    )
+
+    await client.query('COMMIT')
+
+    return {
+      transferencia_id: transferenciaId,
+      saldo_origem: saldoAtual - valor,
+    }
+  } catch (erro) {
+    await client.query('ROLLBACK')
+    throw erro
+  } finally {
+    client.release()
+  }
+}

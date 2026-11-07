@@ -27,6 +27,24 @@ export const esquemaDeposito = z.object({
     .max(DEPOSITO_MAXIMO, 'valor máximo por depósito é R$ 1.000.000,00'),
 }, corpoObjeto)
 
+export const esquemaMovimentacao = z.object({
+  transferencia_id: z
+    .string({ error: 'transferencia_id é obrigatória e deve ser texto' })
+    .uuid('transferencia_id deve ser um UUID válido'),
+  conta_origem: z
+    .number({ error: 'conta_origem é obrigatória e deve ser número' })
+    .int('conta_origem deve ser inteiro')
+    .positive('conta_origem deve ser maior que zero'),
+  conta_destino: z
+    .number({ error: 'conta_destino é obrigatória e deve ser número' })
+    .int('conta_destino deve ser inteiro')
+    .positive('conta_destino deve ser maior que zero'),
+  valor: z
+    .number({ error: 'valor é obrigatório e deve ser número' })
+    .int('valor deve ser inteiro (centavos)')
+    .positive('valor deve ser maior que zero'),
+}, corpoObjeto)
+
 export const esquemaPaginacao = z.object({
   pagina: z.coerce
     .number({ error: 'pagina deve ser número' })
