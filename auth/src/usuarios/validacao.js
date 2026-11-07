@@ -16,20 +16,22 @@ export function cpfValido(cpf) {
   return calcularDigito(9) === digitos[9] && calcularDigito(10) === digitos[10]
 }
 
+// Mensagem para campo ausente ou com tipo errado (ex.: número no lugar de texto).
+// Sem isso o zod responde em inglês: "Invalid input: expected string, received undefined".
+const texto = (campo) => z.string({ error: `${campo} é obrigatório e deve ser texto` })
+
 export const esquemaCadastro = z.object({
-  nome: z.string().trim().min(2, 'nome muito curto').max(100, 'nome muito longo'),
-  email: z.string().trim().toLowerCase().pipe(z.email('e-mail inválido')),
-  cpf: z
-    .string()
+  nome: texto('nome').trim().min(2, 'nome muito curto').max(100, 'nome muito longo'),
+  email: texto('email').trim().toLowerCase().pipe(z.email('e-mail inválido')),
+  cpf: texto('cpf')
     .transform((cpf) => cpf.replace(/\D/g, '')) // aceita com ou sem pontos e traço
     .refine(cpfValido, 'cpf inválido'),
-  senha: z
-    .string()
+  senha: texto('senha')
     .min(8, 'a senha precisa ter pelo menos 8 caracteres')
     .max(128, 'a senha pode ter no máximo 128 caracteres'),
-})
+}, { error: 'o corpo precisa ser um objeto JSON' })
 
 export const esquemaLogin = z.object({
-  email: z.string().trim().toLowerCase().pipe(z.email('e-mail inválido')),
-  senha: z.string().min(1, 'informe a senha').max(128, 'senha muito longa'),
-})
+  email: texto('email').trim().toLowerCase().pipe(z.email('e-mail inválido')),
+  senha: texto('senha').min(1, 'informe a senha').max(128, 'senha muito longa'),
+}, { error: 'o corpo precisa ser um objeto JSON' })

@@ -1,5 +1,9 @@
 import { pool } from '../db.js'
 
+// O Postgres recusa (com erro, que virava 500) um id que não tem formato de UUID.
+// Conferir antes deixa "GET /contas/abc" responder 404, como qualquer conta inexistente.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 // ─── Conta ───────────────────────────────────────────────────
 
 export async function criarConta(usuarioId, chavePix) {
@@ -13,6 +17,7 @@ export async function criarConta(usuarioId, chavePix) {
 }
 
 export async function buscarContaPorId(id) {
+  if (!UUID.test(id)) return null
   const { rows } = await pool.query(
     `SELECT id, usuario_id, chave_pix, criada_em FROM conta WHERE id = $1`,
     [id],
@@ -20,11 +25,20 @@ export async function buscarContaPorId(id) {
   return rows[0] ?? null
 }
 
-export async function buscarContaPorChave(chavePix) {
+// Cada usuário tem no máximo uma conta (UNIQUE no banco).
+export async function buscarContaPorUsuario(usuarioId) {
   const { rows } = await pool.query(
-    `SELECT id, usuario_id FROM conta WHERE chave_pix = $1`,
-    [chavePix],
+    `SELECT id, usuario_id, chave_pix, criada_em FROM conta WHERE usuario_id = $1`,
+    [usuarioId],
   )
+  return rows[0] ?? null
+}
+
+// Usada pelas rotas internas: devolve só o que outro serviço precisa.
+export async function buscarContaInterna({ chave, usuarioId }) {
+  const { rows } = chave !== undefined
+    ? await pool.query(`SELECT id, usuario_id FROM conta WHERE chave_pix = $1`, [chave])
+    : await pool.query(`SELECT id, usuario_id FROM conta WHERE usuario_id = $1`, [usuarioId])
   return rows[0] ?? null
 }
 
@@ -66,7 +80,7 @@ export async function listarExtrato(contaId, pagina, limite) {
       `SELECT id, tipo, valor, transferencia_id, criado_em
        FROM lancamento
        WHERE conta_id = $1
-       ORDER BY criado_em DESC
+       ORDER BY criado_em DESC, id DESC -- id desempata lançamentos do mesmo instante
        LIMIT $2 OFFSET $3`,
       [contaId, limite, offset],
     ),
@@ -107,4 +121,77 @@ export async function verificacao() {
     .map((r) => ({ id: r.id, chave_pix: r.chave_pix, saldo: parseInt(r.saldo, 10) }))
 
   return { soma_total: somaTotal, contas_negativas: contasNegativas }
+}
+
+// ─── Movimentação (débito + crédito atômicos) ───────────────
+
+export async function executarMovimentacao(transferenciaId, contaOrigem, contaDestino, valor) {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+
+    // 1. Buscar conta de origem
+    const { rows: [origem] } = await client.query(
+      'SELECT id, usuario_id FROM conta WHERE id = $1',
+      [contaOrigem],
+    )
+    if (!origem) {
+      const { ErroHttp } = await import('../erros.js')
+      throw new ErroHttp(404, 'conta de origem não encontrada')
+    }
+
+    // 2. Buscar conta de destino
+    const { rows: [destino] } = await client.query(
+      'SELECT id FROM conta WHERE id = $1',
+      [contaDestino],
+    )
+    if (!destino) {
+      const { ErroHttp } = await import('../erros.js')
+      throw new ErroHttp(404, 'conta de destino não encontrada')
+    }
+
+    // 3. Calcular saldo da origem
+    const { rows: [{ saldo }] } = await client.query(
+      `SELECT
+         COALESCE(SUM(CASE WHEN tipo = 'credito' THEN valor ELSE 0 END), 0)
+         -
+         COALESCE(SUM(CASE WHEN tipo = 'debito' THEN valor ELSE 0 END), 0)
+         AS saldo
+       FROM lancamento
+       WHERE conta_id = $1`,
+      [contaOrigem],
+    )
+    const saldoAtual = parseInt(saldo, 10)
+
+    if (saldoAtual < valor) {
+      const { ErroHttp } = await import('../erros.js')
+      throw new ErroHttp(422, 'saldo insuficiente')
+    }
+
+    // 4. Débito na origem
+    await client.query(
+      `INSERT INTO lancamento (conta_id, tipo, valor, transferencia_id)
+       VALUES ($1, 'debito', $2, $3)`,
+      [contaOrigem, valor, transferenciaId],
+    )
+
+    // 5. Crédito no destino
+    await client.query(
+      `INSERT INTO lancamento (conta_id, tipo, valor, transferencia_id)
+       VALUES ($1, 'credito', $2, $3)`,
+      [contaDestino, valor, transferenciaId],
+    )
+
+    await client.query('COMMIT')
+
+    return {
+      transferencia_id: transferenciaId,
+      saldo_origem: saldoAtual - valor,
+    }
+  } catch (erro) {
+    await client.query('ROLLBACK')
+    throw erro
+  } finally {
+    client.release()
+  }
 }

@@ -1,4 +1,84 @@
-body { font-family: system-ui, sans-serif; max-width: 360px; margin: 3rem auto; padding: 0 1rem; }
-form { display: flex; flex-direction: column; gap: 0.75rem; }
-input, button { padding: 0.6rem; font-size: 1rem; }
-[role="alert"] { color: #b00020; margin: 0; }
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--zync-fundo);
+  color: var(--zync-texto);
+  font-family: var(--zync-fonte);
+}
+
+/* o design é de celular (390px): no navegador, uma coluna centralizada */
+#root { max-width: 430px; min-height: 100vh; margin: 0 auto; padding: 56px 24px 32px; }
+
+a { color: var(--zync-ouro); text-decoration: none; }
+a:hover { color: var(--zync-ouro-claro); }
+
+form { display: flex; flex-direction: column; gap: 16px; }
+
+input {
+  height: 54px;
+  border-radius: var(--zync-raio-input);
+  border: 1px solid var(--zync-borda-input);
+  background: var(--zync-superficie-2);
+  color: var(--zync-texto);
+  padding: 0 18px;
+  font: inherit;
+  font-size: 15px;
+}
+input::placeholder { color: var(--zync-placeholder); }
+input:focus { outline: 2px solid var(--zync-ouro); outline-offset: 2px; }
+
+button { min-height: var(--zync-alvo-toque); font-family: inherit; cursor: pointer; }
+button[type='submit'] {
+  height: 56px;
+  border: 0;
+  border-radius: var(--zync-raio-pilula);
+  background: var(--zync-ouro);
+  color: var(--zync-texto-sobre-ouro);
+  font-size: 16px;
+  font-weight: 600;
+}
+button[type='submit']:hover { background: var(--zync-ouro-claro); }
+
+[role='alert'] { color: #ff8a80; margin: 0; font-size: 14px; }
+
+.marca { text-align: center; font-size: 30px; font-weight: 700; letter-spacing: -0.5px; margin: 0; }
+.marca span { color: var(--zync-ouro); }
+.sub { text-align: center; color: var(--zync-texto-secundario); margin: 0 0 24px; }
+.logo { display: block; margin: 0 auto 12px; border-radius: 12px; }
+
+/* tela inicial */
+.inicio { display: flex; flex-direction: column; gap: 20px; }
+.topo { display: flex; justify-content: space-between; align-items: center; }
+.topo div { display: flex; flex-direction: column; }
+.sub-topo { font-size: 13px; color: var(--zync-texto-secundario); }
+.link { background: none; border: 0; color: var(--zync-ouro); font-weight: 500; }
+.link-escuro { background: none; border: 0; color: var(--zync-texto-sobre-ouro); font-weight: 600; }
+
+.cartao-saldo {
+  border-radius: var(--zync-raio-painel);
+  padding: 24px;
+  background: var(--zync-degrade-ouro);
+  color: var(--zync-texto-sobre-ouro);
+  display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 18px 40px -18px rgba(233, 185, 73, 0.55);
+}
+.cartao-saldo .linha { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500; }
+.saldo { font-size: 36px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
+.chave { font-size: 13px; font-weight: 500; }
+
+.deposito { flex-direction: row; gap: 8px; }
+.deposito input { flex: 1; min-width: 0; }
+.deposito button { height: 54px; padding: 0 20px; font-size: 15px; }
+
+.movimentacoes { background: var(--zync-superficie); border-radius: var(--zync-raio-card); padding: 20px; }
+.movimentacoes h2 { margin: 0 0 8px; font-size: 16px; }
+.movimentacoes ul { list-style: none; margin: 0; padding: 0; }
+.movimentacoes li { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--zync-borda); }
+.movimentacoes li:last-child { border-bottom: 0; }
+.movimentacoes li div { display: flex; flex-direction: column; }
+.desc { font-weight: 500; }
+.data { font-size: 12px; color: var(--zync-texto-secundario); }
+.valor { font-weight: 600; }
+.entrada { color: var(--zync-ouro); }
+.saida { color: var(--zync-texto); }

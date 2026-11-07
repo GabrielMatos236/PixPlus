@@ -107,6 +107,32 @@ test('campos faltando devolvem 400 listando cada um', async () => {
   assert.deepEqual(campos, ['cpf', 'email', 'nome', 'senha'])
 })
 
+test('campo faltando ou com tipo errado tem mensagem em português', async () => {
+  const resposta = await request(app)
+    .post('/auth/cadastro')
+    .send({ nome: 'Gabriel', email: 'gabriel@teste.com', cpf: 52998224725 })
+
+  assert.equal(resposta.status, 400)
+  assert.deepEqual(resposta.body.detalhes, [
+    { campo: 'cpf', mensagem: 'cpf é obrigatório e deve ser texto' },
+    { campo: 'senha', mensagem: 'senha é obrigatório e deve ser texto' },
+  ])
+})
+
+test('corpo que não é objeto devolve 400 com mensagem em português', async () => {
+  const resposta = await request(app).post('/auth/cadastro').send(['nome', 'email'])
+
+  assert.equal(resposta.status, 400)
+  assert.deepEqual(resposta.body.detalhes, [{ campo: '', mensagem: 'o corpo precisa ser um objeto JSON' }])
+})
+
+test('hash usa os parâmetros mínimos da OWASP (19 MiB, 2 passadas, 1 thread)', async () => {
+  await request(app).post('/auth/cadastro').send(valido)
+  const { rows } = await pool.query('SELECT senha_hash FROM usuario')
+
+  assert.match(rows[0].senha_hash, /^\$argon2id\$v=19\$m=19456,p=1,t=2\$/)
+})
+
 test('JSON malformado devolve 400, não 500', async () => {
   const resposta = await request(app)
     .post('/auth/cadastro')

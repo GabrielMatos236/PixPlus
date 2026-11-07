@@ -22,14 +22,15 @@ export default function Cadastro() {
 
   return (
     <form onSubmit={cadastrar}>
-      <h1>Cadastro</h1>
-      <input placeholder="Nome" value={form.nome} onChange={mudar('nome')} required />
+      <div className="marca"><span>Z</span>ync</div>
+      <h1>Criar conta</h1>
+      <input placeholder="Nome completo" value={form.nome} onChange={mudar('nome')} required />
       <input type="email" placeholder="E-mail" value={form.email} onChange={mudar('email')} required />
       <input placeholder="CPF" value={form.cpf} onChange={mudar('cpf')} required />
       <input type="password" placeholder="Senha (8 a 128 caracteres)" value={form.senha} onChange={mudar('senha')} required />
       {erro && <p role="alert">{erro}</p>}
       <button type="submit">Criar conta</button>
-      <p>Já tem conta? <Link to="/login">Entrar</Link></p>
+      <p className="sub">Já tem conta? <Link to="/login">Entrar</Link></p>
     </form>
   )
 }

@@ -2,6 +2,7 @@ import { test, before, beforeEach, after } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
 import jwt from 'jsonwebtoken'
+import argon2 from 'argon2'
 
 const nomeBanco = new URL(process.env.DATABASE_URL ?? 'postgres://x/sem-banco').pathname.slice(1)
 if (!nomeBanco.endsWith('_test')) {
@@ -79,4 +80,24 @@ test('token assinado com outro segredo não passa na verificação', async () =>
 test('campos faltando devolvem 400', async () => {
   const resposta = await request(app).post('/auth/login').send({})
   assert.equal(resposta.status, 400)
+  assert.deepEqual(resposta.body.detalhes, [
+    { campo: 'email', mensagem: 'email é obrigatório e deve ser texto' },
+    { campo: 'senha', mensagem: 'senha é obrigatório e deve ser texto' },
+  ])
+})
+
+test('senha cadastrada com os parâmetros antigos do argon2 continua entrando', async () => {
+  // Hash feito com o padrão da biblioteca (64 MiB, 3 passadas, 4 threads), como era antes.
+  const hashAntigo = await argon2.hash('senhaforte123')
+  await pool.query(
+    `INSERT INTO usuario (nome, email, cpf, senha_hash) VALUES ('Antigo', 'antigo@teste.com', '11144477735', $1)`,
+    [hashAntigo],
+  )
+
+  const resposta = await request(app)
+    .post('/auth/login')
+    .send({ email: 'antigo@teste.com', senha: 'senhaforte123' })
+
+  assert.equal(resposta.status, 200)
+  assert.ok(resposta.body.token)
 })

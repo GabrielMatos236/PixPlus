@@ -9,9 +9,16 @@ import { config } from '../config.js'
 
 const DUPLICADO = '23505' // código do Postgres para violação de UNIQUE
 
+// Parâmetros do argon2id: o mínimo recomendado pela OWASP (19 MiB, 2 passadas, 1 thread).
+// O padrão da biblioteca (64 MiB, 3 passadas, 4 threads) é uns 5x mais lento e
+// virava o gargalo do login no teste de carga. Hashes antigos continuam valendo:
+// cada hash guarda os parâmetros com que foi feito, e o verify usa os dele.
+const OPCOES_ARGON2 = { type: argon2.argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 }
+
 // Hash de uma senha qualquer, usado quando o e-mail não existe.
 // Assim o login demora o mesmo tempo nos dois casos e não denuncia quais e-mails têm conta.
-const HASH_FALSO = await argon2.hash('senha-que-ninguem-usa')
+// Feito com os mesmos parâmetros, senão o tempo da resposta denunciaria a diferença.
+const HASH_FALSO = await argon2.hash('senha-que-ninguem-usa', OPCOES_ARGON2)
 
 const validarToken = criarValidarToken(config.JWT_SECRET)
 
@@ -31,7 +38,7 @@ function validar(esquema, corpo) {
 
 rotasUsuarios.post('/auth/cadastro', async (req, res) => {
   const { nome, email, cpf, senha } = validar(esquemaCadastro, req.body)
-  const senhaHash = await argon2.hash(senha) // argon2id; a senha original nunca é guardada
+  const senhaHash = await argon2.hash(senha, OPCOES_ARGON2) // a senha original nunca é guardada
 
   try {
     const usuario = await criarUsuario({ nome, email, cpf, senhaHash })
