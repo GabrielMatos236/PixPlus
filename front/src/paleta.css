@@ -1,0 +1,36 @@
+/* Zync: paleta e medidas base. Cole no index.css / App.css */
+:root {
+  /* Fundos e neutros (matiz 240°, quase sem saturação) */
+  --zync-fundo: #121214;
+  --zync-superficie: #1A1A1E;      /* painéis, cards */
+  --zync-superficie-2: #1E1E23;    /* botões de ícone, inputs */
+  --zync-nav: #26262B;             /* barra de navegação */
+  --zync-borda: #34343A;
+  --zync-borda-input: #3A3A41;
+
+  /* Dourados */
+  --zync-ouro: #E9B949;            /* cor principal: botões, ícones, destaques */
+  --zync-ouro-claro: #F5D27E;      /* hover */
+  --zync-ouro-escuro: #B47A28;     /* fim dos degradês */
+  --zync-degrade-ouro: linear-gradient(135deg, #E9B949 0%, #B47A28 100%);
+
+  /* Texto */
+  --zync-texto: #F4EFE6;
+  --zync-texto-secundario: #A8A196;
+  --zync-placeholder: #8C8679;
+  --zync-texto-sobre-ouro: #1A1206;
+
+  /* Marca (logo) */
+  --zync-bronze: #65451B;
+  --zync-cobre: #9B632D;
+  --zync-fundo-logo: #1B170F;
+  --zync-degrade-splash: linear-gradient(165deg, #2B2213 0%, #1B170F 38%, #141310 70%, #121214 100%);
+
+  /* Medidas */
+  --zync-raio-input: 16px;
+  --zync-raio-card: 20px;
+  --zync-raio-painel: 28px;
+  --zync-raio-pilula: 999px;
+  --zync-alvo-toque: 44px;         /* tamanho mínimo de qualquer botão */
+  --zync-fonte: 'Poppins', system-ui, sans-serif;
+}
