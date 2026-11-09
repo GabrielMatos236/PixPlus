@@ -99,6 +99,17 @@ Id de conta que não é UUID responde como conta inexistente (404).
 - Resposta 200: `{ "id": "uuid", "usuario_id": "uuid" }`
 - Erros: 400 (nenhum ou os dois parâmetros, ou `usuario_id` que não é UUID), 404 (`chave pix não encontrada` ou `usuário sem conta`)
 
+### POST /interno/movimentacoes
+- Só entre serviços (usada por Transferências), sem token
+- Corpo: `{ "transferencia_id": "uuid", "conta_origem": "uuid", "conta_destino": "uuid", "valor": 2500 }`
+  - `valor`: inteiro maior que zero, no máximo 100000000 (R$ 1.000.000,00)
+  - `conta_destino` diferente de `conta_origem`
+- Grava o débito na origem e o crédito no destino, os dois com o `transferencia_id`, numa transação só: ou entram os dois, ou nenhum
+- Resposta 201: `{ "transferencia_id": "uuid", "saldo_origem": 7500 }` (saldo da origem depois do débito)
+- Erros: 400 (dados inválidos), 404 (`conta de origem não encontrada` ou `conta de destino não encontrada`), 422 (`saldo insuficiente`; nada é gravado)
+- **Versão ingênua (etapa 2):** confere o saldo sem travar a conta. Dois Pix simultâneos na mesma conta podem passar os dois e deixá-la negativa. É o furo da tag `v0-ingenua`; o lock entra na etapa 3
+- Ainda não é idempotente: repetir com o mesmo `transferencia_id` lança de novo (também etapa 3)
+
 ### GET /interno/verificacao
 - Só entre serviços (usada pelos testes de carga)
 - Resposta 200: `{ "soma_total": 0, "contas_negativas": [{ "id": "uuid", "chave_pix": "string", "saldo": -500 }] }`
@@ -111,7 +122,7 @@ Formato de erro igual ao do Auth: `{ "erro": "mensagem" }`, e erros de validaç�
 - Autenticação: não
 - Resposta 200: `{ "servico": "transferencias", "banco": true }`
 
-`POST /transferencias` e `GET /transferencias/{id}` entram na etapa 2, junto com o contrato de `POST /interno/movimentacoes` fechado com Contas.
+`POST /transferencias` e `GET /transferencias/{id}` entram na etapa 2. Transferências chama `POST /interno/movimentacoes` de Contas.
 
 ### Eventos (outbox)
 
