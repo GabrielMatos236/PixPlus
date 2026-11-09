@@ -203,6 +203,15 @@ Cada usuário acessa apenas as próprias notificações.
   `{ "id": "uuid", "mensagem": "string", "lida": true, "criada_em": "data ISO" }`
 - Erros: 400 (corpo inválido), 401, 404 (notificação inexistente ou pertencente a outro usuário)
 
+### DELETE /notificacoes/{id}
+- Autenticação: sim, `Authorization: Bearer <token>`
+- Corpo: não possui
+- Apaga somente o aviso do usuário logado
+- Resposta 204: sem corpo
+- Erros: 401 (token ausente, inválido ou expirado), 404 (id inválido, aviso inexistente ou pertencente a outro usuário)
+- Repetir a exclusão de um aviso já apagado retorna 404
+- Excluir um aviso mantém o registro do evento recebido; uma reentrega do mesmo evento não recria o aviso
+
 ### POST /interno/eventos
 - Somente entre serviços, sem exposição pelo nginx
 - Corpo: evento `transferencia.concluida`, conforme o contrato de eventos de Transferências

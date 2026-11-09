@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "migrate": "node-pg-migrate up --no-verbose"
+    "migrate": "node-pg-migrate up --no-verbose",
+    "test": "node test/verificarBanco.js && node-pg-migrate up --no-verbose && node --test --test-concurrency=1 \"test/*.test.js\""
   },
   "dependencies": {
     "cors": "^2.8.6",
@@ -18,5 +19,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.1"
   }
 }
