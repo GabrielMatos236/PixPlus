@@ -122,7 +122,46 @@ Formato de erro igual ao do Auth: `{ "erro": "mensagem" }`, e erros de validaç�
 - Autenticação: não
 - Resposta 200: `{ "servico": "transferencias", "banco": true }`
 
-`POST /transferencias` e `GET /transferencias/{id}` entram na etapa 2. Transferências chama `POST /interno/movimentacoes` de Contas.
+Rotas com autenticação usam `Authorization: Bearer <token>` e respondem 401 (`token ausente`, `token inválido` ou `token expirado`).
+Valores sempre em centavos (inteiro).
+
+Transferência, como o cliente vê (ids de conta e de usuário ficam de fora):
+
+```json
+{
+  "id": "uuid",
+  "chave_destino": "joao@pix",
+  "valor": 2500,
+  "status": "concluida",
+  "motivo_falha": null,
+  "criada_em": "data ISO",
+  "atualizada_em": "data ISO"
+}
+```
+
+- `status`: `pendente` (começou e não se sabe se terminou: Contas caiu no meio), `concluida` ou `falhou`
+- `motivo_falha`: só com `falhou`, ex.: `saldo insuficiente`
+
+### POST /transferencias
+- Autenticação: sim
+- Corpo: `{ "chave_destino": "string", "valor": 2500 }`
+  - `chave_destino`: 1 a 140 caracteres, normalizada como em Contas (sem espaços nas pontas e em minúsculas)
+  - `valor`: inteiro maior que zero, no máximo 100000000 (R$ 1.000.000,00)
+- Passo a passo: acha a conta de quem está logado (`GET /interno/contas?usuario_id=`) e a da chave (`?chave=`), grava a transferência como `pendente`, chama `POST /interno/movimentacoes` de Contas e grava `concluida` ou `falhou`. Quando conclui, grava o evento `transferencia.concluida` na outbox na mesma transação
+- Resposta 201: a transferência, com `status: "concluida"`
+- Erros:
+  - 400: dados inválidos
+  - 401
+  - 404: `chave pix não encontrada`
+  - 422: `você ainda não tem conta`, `não dá para mandar Pix para a própria conta` (nada gravado) ou `saldo insuficiente` (gravada como `falhou`)
+  - 503: `serviço de contas indisponível`. Se Contas caiu antes da movimentação, nada é gravado; se caiu durante, a transferência fica `pendente`
+- **Versão ingênua (etapa 2):** sem cabeçalho `Idempotency-Key`, sem novas tentativas e sem rotina de pendentes. Os três entram na etapa 3
+
+### GET /transferencias/{id}
+- Autenticação: sim
+- Só quem enviou consulta
+- Resposta 200: a transferência
+- Erros: 401, 403 (`esta transferência não é sua`), 404 (`transferência não encontrada`, também para id que não é UUID)
 
 ### Eventos (outbox)
 

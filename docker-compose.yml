@@ -110,6 +110,7 @@ services:
       DATABASE_URL: postgres://transferencias:${TRANSFERENCIAS_DB_PASSWORD}@transferencias-db:5432/transferencias
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      CONTAS_URL: http://contas:3000
     depends_on:
       transferencias-db:
         condition: service_healthy
