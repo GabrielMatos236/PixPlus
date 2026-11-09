@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Serviço de transferências do Banco Pix: Pix, idempotência e outbox de eventos",
   "scripts": {
-    "test": "node-pg-migrate up --no-verbose && node --test --test-concurrency=1",
+    "test": "node-pg-migrate up --no-verbose && node --test --test-concurrency=1 \"test/**/*.test.js\"",
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "migrate": "node-pg-migrate up --no-verbose",
