@@ -7,9 +7,11 @@ export const dataHora = (iso) =>
     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
   })
 
-// "50", "50,5" e "50,25" viram 5000, 5050 e 5025
 export function paraCentavos(texto) {
-  const m = texto.trim().match(/^(\d+)(?:[.,](\d{1,2}))?$/)
+  let t = texto.trim()
+  // "1.000,50" e "1.000" usam ponto de milhar; "50.5" continua sendo decimal
+  if (t.includes(',') || /^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '')
+  const m = t.match(/^(\d+)(?:[.,](\d{1,2}))?$/)
   if (!m) return null
   const centavos = Number(m[1]) * 100 + Number((m[2] ?? '').padEnd(2, '0'))
   return centavos > 0 && centavos <= 100000000 ? centavos : null
