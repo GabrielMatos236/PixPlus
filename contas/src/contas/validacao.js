@@ -27,6 +27,28 @@ export const esquemaDeposito = z.object({
     .max(DEPOSITO_MAXIMO, 'valor máximo por depósito é R$ 1.000.000,00'),
 }, corpoObjeto)
 
+// Corpo de POST /interno/movimentacoes, mandado por Transferências.
+// Os ids de conta são UUID, como em todo o resto do Contas.
+const idConta = (campo) => z
+  .string({ error: `${campo} é obrigatória e deve ser texto` })
+  .uuid(`${campo} deve ser um UUID`)
+
+export const esquemaMovimentacao = z.object({
+  transferencia_id: z
+    .string({ error: 'transferencia_id é obrigatória e deve ser texto' })
+    .uuid('transferencia_id deve ser um UUID'),
+  conta_origem: idConta('conta_origem'),
+  conta_destino: idConta('conta_destino'),
+  valor: z
+    .number({ error: 'valor é obrigatório e deve ser número' })
+    .int('valor deve ser inteiro (centavos)')
+    .positive('valor deve ser maior que zero')
+    .max(DEPOSITO_MAXIMO, 'valor máximo por movimentação é R$ 1.000.000,00'),
+}, corpoObjeto).refine((dados) => dados.conta_origem !== dados.conta_destino, {
+  path: ['conta_destino'],
+  message: 'conta_destino deve ser diferente de conta_origem',
+})
+
 export const esquemaPaginacao = z.object({
   pagina: z.coerce
     .number({ error: 'pagina deve ser número' })

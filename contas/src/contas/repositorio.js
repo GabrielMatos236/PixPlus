@@ -1,4 +1,5 @@
 import { pool } from '../db.js'
+import { ErroHttp } from '../erros.js'
 
 // O Postgres recusa (com erro, que virava 500) um id que não tem formato de UUID.
 // Conferir antes deixa "GET /contas/abc" responder 404, como qualquer conta inexistente.
@@ -121,4 +122,53 @@ export async function verificacao() {
     .map((r) => ({ id: r.id, chave_pix: r.chave_pix, saldo: parseInt(r.saldo, 10) }))
 
   return { soma_total: somaTotal, contas_negativas: contasNegativas }
+}
+
+// ─── Movimentação (débito + crédito atômicos) ───────────────
+//
+// VERSÃO INGÊNUA, sem lock de propósito (etapa 2). Lê o saldo, confere e grava.
+// Dois Pix ao mesmo tempo na mesma conta leem o mesmo saldo antes de qualquer
+// débito entrar, os dois passam na conferência e a conta fica negativa.
+// É esse furo que o teste de carga mostra na tag v0-ingenua. A correção, com
+// SELECT ... FOR UPDATE, é a etapa 3.
+//
+// Débito e crédito usam o MESMO cliente do pool (pool.connect). Com pool.query,
+// cada comando pode cair numa conexão diferente e o BEGIN/COMMIT não vale.
+export async function executarMovimentacao(transferenciaId, contaOrigem, contaDestino, valor) {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+
+    const { rows: contas } = await client.query(
+      'SELECT id FROM conta WHERE id = ANY($1::uuid[])',
+      [[contaOrigem, contaDestino]],
+    )
+    const existe = (id) => contas.some((conta) => conta.id === id)
+    if (!existe(contaOrigem)) throw new ErroHttp(404, 'conta de origem não encontrada')
+    if (!existe(contaDestino)) throw new ErroHttp(404, 'conta de destino não encontrada')
+
+    const { rows: [{ saldo }] } = await client.query(
+      `SELECT COALESCE(SUM(CASE WHEN tipo = 'credito' THEN valor ELSE -valor END), 0) AS saldo
+       FROM lancamento
+       WHERE conta_id = $1`,
+      [contaOrigem],
+    )
+    const saldoAtual = parseInt(saldo, 10)
+
+    if (saldoAtual < valor) throw new ErroHttp(422, 'saldo insuficiente')
+
+    await client.query(
+      `INSERT INTO lancamento (conta_id, tipo, valor, transferencia_id)
+       VALUES ($1, 'debito', $3, $4), ($2, 'credito', $3, $4)`,
+      [contaOrigem, contaDestino, valor, transferenciaId],
+    )
+
+    await client.query('COMMIT')
+    return { transferencia_id: transferenciaId, saldo_origem: saldoAtual - valor }
+  } catch (erro) {
+    await client.query('ROLLBACK')
+    throw erro
+  } finally {
+    client.release()
+  }
 }
