@@ -28,6 +28,7 @@ export default function Inicio() {
   const [valor, setValor] = useState('')
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(true)
+  const [depositando, setDepositando] = useState(false)
 
   const sair = useCallback(() => {
     localStorage.removeItem('token')
@@ -65,14 +66,16 @@ export default function Inicio() {
     iniciar()
   }, [carregarConta, sair])
 
-  async function depositar(e) {
+    async function depositar(e) {
     e.preventDefault()
+    if (depositando) return // clique duplo: o segundo não faz nada
     setErro('')
     const centavos = paraCentavos(valor)
     if (!centavos) {
       setErro('Digite um valor entre 0,01 e 1.000.000,00, como 50,00')
       return
     }
+    setDepositando(true)
     try {
       await chamar(`/contas/${conta.id}/depositos`, { metodo: 'POST', corpo: { valor: centavos } })
       setValor('')
@@ -80,6 +83,8 @@ export default function Inicio() {
     } catch (err) {
       if (err.status === 401) sair()
       else setErro(err.message)
+    } finally {
+      setDepositando(false)
     }
   }
 
@@ -128,7 +133,9 @@ export default function Inicio() {
           value={valor}
           onChange={(e) => setValor(e.target.value)}
         />
-        <button type="submit">Depositar</button>
+        <button type="submit" disabled={depositando}>
+          {depositando ? 'Processando...' : 'Depositar'}
+        </button>
       </form>
       {erro && <p role="alert">{erro}</p>}
 
