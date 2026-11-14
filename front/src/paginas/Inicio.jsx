@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { chamar } from '../api'
 import { reais, dataHora, paraCentavos } from '../formatar'
 import CriarChave from '../componentes/CriarChave'
@@ -124,7 +124,8 @@ export default function Inicio() {
         <div className="saldo">{mostrar ? reais(saldo) : 'R$ ••••'}</div>
         <span className="chave">Chave Pix: {conta?.chave_pix}</span>
       </section>
-
+          <Link to="/pix" className="botao-pix">Enviar Pix</Link>
+          
       <form className="deposito" onSubmit={depositar}>
         <input
           inputMode="decimal"
