@@ -1,9 +1,9 @@
 import { Router } from 'express'
 import argon2 from 'argon2'
-import jwt from 'jsonwebtoken'
-import { esquemaCadastro, esquemaLogin } from './validacao.js'
+import { esquemaCadastro, esquemaLogin, validar } from './validacao.js'
 import { criarUsuario, buscarPorEmail, buscarPorId } from './repositorio.js'
 import { criarValidarToken } from '../autenticacao/validarToken.js'
+import { emitirToken } from '../autenticacao/emitirToken.js'
 import { ErroHttp } from '../erros.js'
 import { config } from '../config.js'
 
@@ -23,18 +23,6 @@ const HASH_FALSO = await argon2.hash('senha-que-ninguem-usa', OPCOES_ARGON2)
 const validarToken = criarValidarToken(config.JWT_SECRET)
 
 export const rotasUsuarios = Router()
-
-function validar(esquema, corpo) {
-  const validacao = esquema.safeParse(corpo ?? {})
-  if (!validacao.success) {
-    const detalhes = validacao.error.issues.map((problema) => ({
-      campo: problema.path.join('.'),
-      mensagem: problema.message,
-    }))
-    throw new ErroHttp(400, 'dados inválidos', detalhes)
-  }
-  return validacao.data
-}
 
 rotasUsuarios.post('/auth/cadastro', async (req, res) => {
   const { nome, email, cpf, senha } = validar(esquemaCadastro, req.body)
@@ -59,8 +47,7 @@ rotasUsuarios.post('/auth/login', async (req, res) => {
     throw new ErroHttp(401, 'e-mail ou senha incorretos') // mesma resposta nos dois casos
   }
 
-  const token = jwt.sign({ sub: usuario.id }, config.JWT_SECRET, { expiresIn: '1h' })
-  res.json({ token })
+  res.json({ token: emitirToken(usuario.id) })
 })
 
 rotasUsuarios.get('/auth/eu', validarToken, async (req, res) => {
