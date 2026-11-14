@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ErroHttp } from '../erros.js'
 
 // Confere os dois dígitos verificadores do CPF (regra oficial da Receita).
 export function cpfValido(cpf) {
@@ -20,18 +21,45 @@ export function cpfValido(cpf) {
 // Sem isso o zod responde em inglês: "Invalid input: expected string, received undefined".
 const texto = (campo) => z.string({ error: `${campo} é obrigatório e deve ser texto` })
 
+// Os mesmos campos valem no cadastro com senha e no primeiro acesso pelo Firebase.
+export const campoNome = texto('nome').trim().min(2, 'nome muito curto').max(100, 'nome muito longo')
+const campoEmail = texto('email').trim().toLowerCase().pipe(z.email('e-mail inválido'))
+const campoCpf = texto('cpf')
+  .transform((cpf) => cpf.replace(/\D/g, '')) // aceita com ou sem pontos e traço
+  .refine(cpfValido, 'cpf inválido')
+
+const corpoObjeto = { error: 'o corpo precisa ser um objeto JSON' }
+
 export const esquemaCadastro = z.object({
-  nome: texto('nome').trim().min(2, 'nome muito curto').max(100, 'nome muito longo'),
-  email: texto('email').trim().toLowerCase().pipe(z.email('e-mail inválido')),
-  cpf: texto('cpf')
-    .transform((cpf) => cpf.replace(/\D/g, '')) // aceita com ou sem pontos e traço
-    .refine(cpfValido, 'cpf inválido'),
+  nome: campoNome,
+  email: campoEmail,
+  cpf: campoCpf,
   senha: texto('senha')
     .min(8, 'a senha precisa ter pelo menos 8 caracteres')
     .max(128, 'a senha pode ter no máximo 128 caracteres'),
-}, { error: 'o corpo precisa ser um objeto JSON' })
+}, corpoObjeto)
 
 export const esquemaLogin = z.object({
-  email: texto('email').trim().toLowerCase().pipe(z.email('e-mail inválido')),
+  email: campoEmail,
   senha: texto('senha').min(1, 'informe a senha').max(128, 'senha muito longa'),
-}, { error: 'o corpo precisa ser um objeto JSON' })
+}, corpoObjeto)
+
+// POST /auth/firebase. Nome e CPF só são usados no primeiro acesso.
+export const esquemaFirebase = z.object({
+  idToken: texto('idToken').min(1, 'informe o idToken').max(5000, 'idToken muito longo'),
+  nome: campoNome.optional(),
+  cpf: campoCpf.optional(),
+}, corpoObjeto)
+
+export function validar(esquema, corpo) {
+  // No Express 5, uma requisição sem corpo chega com req.body undefined.
+  const validacao = esquema.safeParse(corpo ?? {})
+  if (!validacao.success) {
+    const detalhes = validacao.error.issues.map((problema) => ({
+      campo: problema.path.join('.'),
+      mensagem: problema.message,
+    }))
+    throw new ErroHttp(400, 'dados inválidos', detalhes)
+  }
+  return validacao.data
+}

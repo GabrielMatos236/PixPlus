@@ -3,10 +3,15 @@ import cors from 'cors'
 import { config } from './config.js'
 import { pool } from './db.js'
 import { rotasUsuarios } from './usuarios/rotas.js'
+import { criarRotasFirebase } from './usuarios/rotasFirebase.js'
+import { criarVerificadorFirebase } from './firebase/verificador.js'
 import { tratarErros } from './erros.js'
 
 // Monta o app sem abrir porta. Assim os testes usam o mesmo app sem subir servidor.
-export function criarApp() {
+// Os testes passam um verificador do Firebase falso; em produção vale o de verdade.
+export function criarApp({
+  verificarTokenFirebase = criarVerificadorFirebase(config.FIREBASE_PROJECT_ID),
+} = {}) {
   const app = express()
   app.disable('x-powered-by') // não anuncia que é Express
   app.use(cors({
@@ -21,6 +26,7 @@ export function criarApp() {
   })
 
   app.use(rotasUsuarios)
+  app.use(criarRotasFirebase(verificarTokenFirebase))
 
   app.use((req, res) => res.status(404).json({ erro: 'rota não encontrada' }))
   app.use(tratarErros) // sempre o último

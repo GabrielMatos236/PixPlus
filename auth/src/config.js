@@ -6,6 +6,14 @@ const esquema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   PORT: z.coerce.number().int().positive().default(3000),
   JWT_SECRET: z.string().min(32, 'precisa ter pelo menos 32 caracteres'),
+  // Id do projeto no Firebase (não é segredo: o front também usa). Opcional: sem ele
+  // o resto do Auth funciona e só POST /auth/firebase responde 503.
+  // O compose manda vazio quando não está no .env, e vazio conta como "não tem".
+  FIREBASE_PROJECT_ID: z
+    .string()
+    .optional()
+    .transform((id) => id?.trim() || undefined)
+    .pipe(z.string().regex(/^[a-z0-9-]{4,40}$/, 'id de projeto do firebase inválido').optional()),
   CORS_ORIGINS: z
     .string()
     .default('http://localhost:5173')
