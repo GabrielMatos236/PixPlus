@@ -14,6 +14,7 @@ export async function chamar(caminho, { metodo = 'GET', corpo } = {}) {
     const detalhes = dados.detalhes?.map((d) => `${d.campo}: ${d.mensagem}`).join('; ')
     const erro = new Error(detalhes || dados.erro || 'Algo deu errado')
     erro.status = resposta.status
+    erro.dados = dados
     throw erro
   }
   return dados

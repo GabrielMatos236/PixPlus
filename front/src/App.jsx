@@ -3,6 +3,7 @@ import Login from './paginas/Login'
 import Cadastro from './paginas/Cadastro'
 import Inicio from './paginas/Inicio'
 import EnviarPix from './paginas/EnviarPix'
+import Completar from './paginas/Completar'
 
 // Só deixa entrar quem tem token guardado; senão manda pro login.
 function RotaPrivada({ children }) {
@@ -16,6 +17,7 @@ export default function App() {
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="/" element={<RotaPrivada><Inicio /></RotaPrivada>} />
       <Route path="/pix" element={<RotaPrivada><EnviarPix /></RotaPrivada>} />
+      <Route path="/completar" element={<RotaPrivada><Completar /></RotaPrivada>} />
     </Routes>
   )
 }

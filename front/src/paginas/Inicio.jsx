@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { chamar } from '../api'
 import { reais, dataHora, paraCentavos } from '../formatar'
 import CriarChave from '../componentes/CriarChave'
+import { signOut } from 'firebase/auth'
+import { auth } from '../firebase'
 
 function saudacao() {
   const h = new Date().getHours()
@@ -30,10 +32,11 @@ export default function Inicio() {
   const [carregando, setCarregando] = useState(true)
   const [depositando, setDepositando] = useState(false)
 
-  const sair = useCallback(() => {
+    const sair = useCallback(() => {
     localStorage.removeItem('token')
+    signOut(auth)
     navegar('/login')
-  }, [navegar])
+   }, [navegar])
 
   const carregarConta = useCallback(async (c) => {
     const [s, e] = await Promise.all([
