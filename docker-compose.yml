@@ -70,6 +70,7 @@ services:
       DATABASE_URL: postgres://auth:${AUTH_DB_PASSWORD}@auth-db:5432/auth
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
     depends_on:
       auth-db:
         condition: service_healthy

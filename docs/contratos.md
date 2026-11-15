@@ -42,6 +42,23 @@ Formato de erro de todos os endpoints: `{ "erro": "mensagem" }`. Erros de valida
   - Os outros serviços conferem o token localmente com o mesmo `JWT_SECRET`, mandado no cabeçalho `Authorization: Bearer <token>`
 - Erros: 400 (dados inválidos), 401 (e-mail ou senha incorretos; mesma resposta para e-mail inexistente e senha errada)
 
+### POST /auth/firebase
+- Autenticação: não (quem autentica é o Firebase)
+- Troca o token do Firebase (login com Google ou com e-mail e senha do Firebase) pelo nosso JWT
+- Corpo: `{ "idToken": "string", "nome": "string (opcional)", "cpf": "string (opcional)" }`
+  - `idToken`: o que o SDK do Firebase devolve depois do login (`await usuario.getIdToken()`)
+  - `nome` e `cpf`: só no primeiro acesso, mesmas regras do cadastro. No login com Google, o nome vem do Google se não for mandado
+- Resposta 200 (já tinha entrado antes) ou 201 (primeiro acesso, usuário criado): `{ "token": "string" }`, o mesmo JWT do `POST /auth/login`
+- Erros:
+  - 400: dados inválidos
+  - 401: `token do firebase inválido ou expirado`
+  - 409: `e-mail já cadastrado` (o e-mail já tem cadastro com senha; as contas não são ligadas) ou `cpf já cadastrado`
+  - 422: `complete o cadastro`, com `detalhes` dizendo o que falta (`nome`, `cpf` ou os dois). O front mostra a tela de completar cadastro e manda de novo com o mesmo `idToken`; ou `a conta do firebase precisa ter e-mail`
+  - 503: `firebase indisponível, tente de novo` (o Auth não conseguiu falar com o Google) ou `login pelo firebase não configurado no servidor` (falta `FIREBASE_PROJECT_ID`)
+- Quem entra pelo Firebase não tem senha no Auth: `POST /auth/login` responde 401 para esse e-mail
+
+**`POST /auth/cadastro` e `POST /auth/login` continuam**, mas o front usa o Firebase. Os dois ficam para os testes de carga e o seed: o k6 não pode fazer milhares de logins no Firebase.
+
 ### GET /auth/eu
 - Autenticação: sim, `Authorization: Bearer <token>`
 - Resposta 200: `{ "id": "uuid", "nome": "string", "email": "string", "criado_em": "data ISO" }`
