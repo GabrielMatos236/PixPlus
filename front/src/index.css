@@ -92,3 +92,9 @@ button[type='submit']:hover { background: var(--zync-ouro-claro); }
 .botao-pix:hover { background: var(--zync-ouro-claro); color: var(--zync-texto-sobre-ouro); }
 .comprovante { background: var(--zync-superficie); border-radius: var(--zync-raio-card); padding: 20px; display: flex; flex-direction: column; gap: 4px; }
 button:disabled { opacity: 0.6; cursor: not-allowed; }
+.botao-google {
+  height: 56px; border-radius: var(--zync-raio-pilula);
+  border: 1px solid var(--zync-ouro); background: transparent;
+  color: var(--zync-ouro); font-size: 16px; font-weight: 600;
+}
+.botao-google:hover { background: rgba(233, 185, 73, 0.12); }
