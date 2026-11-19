@@ -1,0 +1,17 @@
+{
+  "coletado_em": "2026-11-19T21:17:43.234Z",
+  "soma_total": 4230000,
+  "quantidade_contas_negativas": 2,
+  "contas_negativas": [
+    {
+      "id": "159f767a-debf-4a86-bf63-a0187ff8c6b6",
+      "chave_pix": "seed.1795122603670.6@teste.example",
+      "saldo": -513
+    },
+    {
+      "id": "7d304264-a9bd-4a37-9371-e6fd39acd737",
+      "chave_pix": "seed.1795122603670.4@teste.example",
+      "saldo": -7772
+    }
+  ]
+}
