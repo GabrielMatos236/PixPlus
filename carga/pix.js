@@ -2,6 +2,7 @@ import http from 'k6/http'
 import { check, sleep } from 'k6'
 import exec from 'k6/execution'
 import { Counter, Trend } from 'k6/metrics'
+import { gerarUuid } from './uuid.js'
 
 const baseUrl = (__ENV.BASE_URL || 'http://nginx')
   .replace(/\/+$/, '')
@@ -118,6 +119,8 @@ export default function (dadosTeste) {
       headers: {
         Authorization: `Bearer ${origem.token}`,
         'Content-Type': 'application/json',
+        // Etapa 3: obrigatória. Cada iteração é um Pix novo, então uma chave nova.
+        'Idempotency-Key': gerarUuid(),
       },
       tags: { operacao: 'pix', name: 'POST /transferencias' },
       responseCallback: statusEsperados,

@@ -35,3 +35,16 @@ export function validar(esquema, dados) {
 
   throw new ErroHttp(400, 'dados inválidos', detalhes)
 }
+
+// Cabeçalho Idempotency-Key: o cliente gera um UUID por Pix (crypto.randomUUID())
+// e manda o MESMO de novo se precisar repetir aquele Pix (erro de rede, timeout).
+// Exigir UUID deixa a regra simples de explicar e de conferir.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function lerChaveIdempotencia(req) {
+  const chave = req.get('Idempotency-Key')?.trim()
+  if (!chave) throw new ErroHttp(400, 'o cabeçalho Idempotency-Key é obrigatório')
+  if (!UUID.test(chave)) throw new ErroHttp(400, 'o cabeçalho Idempotency-Key deve ser um UUID')
+  // Minúsculas: o mesmo UUID escrito em maiúsculas é a mesma chave.
+  return chave.toLowerCase()
+}

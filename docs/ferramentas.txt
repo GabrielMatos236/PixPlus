@@ -58,7 +58,7 @@ firebase-admin -> no Auth, confere o token que o firebase deu pro front (verifyI
 jsonwebtoken -> o Auth assina o JWT (vale 1h). os outros serviços conferem sozinhos com o JWT_SECRET, sem perguntar pro Auth | no lugar de: jose, passport-jwt, express-jwt, sessão com cookie (express-session)
   pq: com sessão, todo serviço teria que perguntar pro Auth a cada request e o Auth vira gargalo. com JWT cada um confere sozinho
 
-"pq firebase E jwt junto?" -> o firebase prova QUEM é a pessoa. dai o Auth entrega o nosso JWT, que os 4 serviços conferem sem chamar o google toda hora
+"pq firebase E jwt junto?" -> o firebase prova quem é a pessoa. dai o Auth entrega o nosso JWT, que os 4 serviços conferem sem chamar o google toda hora
 
 argon2 -> transforma a senha em hash antes de salvar, o banco nunca ve a senha | no lugar de: bcrypt, bcryptjs, scrypt, pbkdf2, MD5, SHA-256
   pq: é o recomendado hoje e gasta memoria de proposito, ai fica ruim de quebrar com placa de video. no começo deixou o login lento na carga (p95 de 6,38s), ai a gente deixou mais leve no PR #23

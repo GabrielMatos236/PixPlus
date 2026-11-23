@@ -7,13 +7,17 @@ import express from 'express'
 export async function criarContasFalso() {
   const contas = [] // { id, usuario_id, chave_pix, saldo }
   const movimentacoes = [] // corpos recebidos em POST /interno/movimentacoes
-  const estado = { foraDoAr: false, movimentacaoForaDoAr: false }
+  // atrasoMs: segura as respostas, para dois pedidos ao mesmo tempo se cruzarem.
+  // aoMovimentar: função chamada antes de responder a movimentação (simula algo
+  // acontecendo em Transferências enquanto Contas trabalha).
+  const estado = { foraDoAr: false, movimentacaoForaDoAr: false, atrasoMs: 0, aoMovimentar: null }
 
   const app = express()
   app.use(express.json())
 
-  app.use((req, res, next) => {
+  app.use(async (req, res, next) => {
     if (estado.foraDoAr) return res.status(503).json({ erro: 'fora do ar' })
+    if (estado.atrasoMs) await new Promise((resolve) => setTimeout(resolve, estado.atrasoMs))
     next()
   })
 
@@ -28,8 +32,9 @@ export async function criarContasFalso() {
     res.json({ id: conta.id, usuario_id: conta.usuario_id })
   })
 
-  app.post('/interno/movimentacoes', (req, res) => {
+  app.post('/interno/movimentacoes', async (req, res) => {
     if (estado.movimentacaoForaDoAr) return res.status(503).json({ erro: 'fora do ar' })
+    if (estado.aoMovimentar) await estado.aoMovimentar(req.body)
     movimentacoes.push(req.body)
 
     const { transferencia_id, conta_origem, conta_destino, valor } = req.body
@@ -63,6 +68,8 @@ export async function criarContasFalso() {
       movimentacoes.length = 0
       estado.foraDoAr = false
       estado.movimentacaoForaDoAr = false
+      estado.atrasoMs = 0
+      estado.aoMovimentar = null
     },
     fechar() {
       return new Promise((resolve) => servidor.close(resolve))
