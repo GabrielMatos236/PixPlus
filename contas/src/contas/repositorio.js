@@ -126,11 +126,11 @@ export async function verificacao() {
 
 // ─── Movimentação (débito + crédito atômicos) ───────────────
 //
-// VERSÃO INGÊNUA, sem lock de propósito (etapa 2). Lê o saldo, confere e grava.
-// Dois Pix ao mesmo tempo na mesma conta leem o mesmo saldo antes de qualquer
-// débito entrar, os dois passam na conferência e a conta fica negativa.
-// É esse furo que o teste de carga mostra na tag v0-ingenua. A correção, com
-// SELECT ... FOR UPDATE, é a etapa 3.
+// Etapa 3: a conta de ORIGEM fica travada (FOR NO KEY UPDATE) do momento em que
+// as contas são conferidas até o COMMIT. Dois Pix saindo da mesma conta não leem
+// mais o mesmo saldo: o segundo espera o primeiro terminar e só então soma os
+// lançamentos, já vendo o débito que acabou de entrar. A versão sem lock, que
+// deixava a conta negativa, está guardada na tag v0-ingenua.
 //
 // Débito e crédito usam o MESMO cliente do pool (pool.connect). Com pool.query,
 // cada comando pode cair numa conexão diferente e o BEGIN/COMMIT não vale.
@@ -146,6 +146,16 @@ export async function executarMovimentacao(transferenciaId, contaOrigem, contaDe
     const existe = (id) => contas.some((conta) => conta.id === id)
     if (!existe(contaOrigem)) throw new ErroHttp(404, 'conta de origem não encontrada')
     if (!existe(contaDestino)) throw new ErroHttp(404, 'conta de destino não encontrada')
+
+    // Trava a linha da conta de ORIGEM até o COMMIT. Outro Pix saindo da
+    // mesma conta espera aqui e só lê o saldo depois que este débito entrou.
+    // FOR NO KEY UPDATE, e não FOR UPDATE: o INSERT em lancamento confere a FK
+    // conta_id com um FOR KEY SHARE na conta de destino. FOR UPDATE conflita com
+    // esse lock e o Pix cruzado (A→B e B→A ao mesmo tempo) dá deadlock;
+    // FOR NO KEY UPDATE não conflita, mas continua barrando outro débito da mesma conta.
+    // Funciona no READ COMMITTED padrão: o SUM abaixo é outro comando, então
+    // ele já enxerga o que foi commitado enquanto este Pix esperava o lock.
+    await client.query('SELECT id FROM conta WHERE id = $1 FOR NO KEY UPDATE', [contaOrigem])
 
     const { rows: [{ saldo }] } = await client.query(
       `SELECT COALESCE(SUM(CASE WHEN tipo = 'credito' THEN valor ELSE -valor END), 0) AS saldo

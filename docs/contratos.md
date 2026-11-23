@@ -124,7 +124,7 @@ Id de conta que não é UUID responde como conta inexistente (404).
 - Grava o débito na origem e o crédito no destino, os dois com o `transferencia_id`, numa transação só: ou entram os dois, ou nenhum
 - Resposta 201: `{ "transferencia_id": "uuid", "saldo_origem": 7500 }` (saldo da origem depois do débito)
 - Erros: 400 (dados inválidos), 404 (`conta de origem não encontrada` ou `conta de destino não encontrada`), 422 (`saldo insuficiente`; nada é gravado)
-- **Versão ingênua (etapa 2):** confere o saldo sem travar a conta. Dois Pix simultâneos na mesma conta podem passar os dois e deixá-la negativa. É o furo da tag `v0-ingenua`; o lock entra na etapa 3
+- **Concorrência (etapa 3):** a conta de origem fica travada com `SELECT ... FOR NO KEY UPDATE` até o fim da transação, e o saldo só é conferido depois do lock. Dois Pix simultâneos saindo da mesma conta passam um de cada vez, e a conta nunca fica negativa. A trava é só na origem e não usa `FOR UPDATE`, porque esse lock conflita com o da FK de `lancamento` na conta de destino e o Pix cruzado (A→B e B→A ao mesmo tempo) daria deadlock. A versão sem lock está guardada na tag `v0-ingenua`
 - Ainda não é idempotente: repetir com o mesmo `transferencia_id` lança de novo (também etapa 3)
 
 ### GET /interno/verificacao
