@@ -92,6 +92,16 @@ export async function falhar(id, motivo) {
   return rows[0] ?? null
 }
 
+// Repetição de um Pix: mesma chave do mesmo usuário (UNIQUE no banco).
+// A chave é de cada usuário: a mesma chave usada por outra pessoa é outro Pix.
+export async function buscarPorChaveIdempotencia(usuarioOrigem, chaveIdempotencia) {
+  const { rows } = await pool.query(
+    'SELECT * FROM transferencia WHERE usuario_origem = $1 AND chave_idempotencia = $2',
+    [usuarioOrigem, chaveIdempotencia],
+  )
+  return rows[0] ?? null
+}
+
 export async function buscarPorId(id) {
   if (!UUID.test(id)) return null
   const { rows } = await pool.query('SELECT * FROM transferencia WHERE id = $1', [id])

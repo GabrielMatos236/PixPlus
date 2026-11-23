@@ -30,8 +30,14 @@ function autorizacao(conta) {
 let maria
 let joao
 
+// Cada chamada é um Pix novo, com a própria Idempotency-Key.
+// As repetições com a mesma chave ficam em idempotencia.test.js.
 function pix(corpo, quem = maria) {
-  return request(app).post('/transferencias').set('Authorization', autorizacao(quem)).send(corpo)
+  return request(app)
+    .post('/transferencias')
+    .set('Authorization', autorizacao(quem))
+    .set('Idempotency-Key', randomUUID())
+    .send(corpo)
 }
 
 async function transferenciasGravadas() {

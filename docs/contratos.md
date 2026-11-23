@@ -126,7 +126,7 @@ Id de conta que não é UUID responde como conta inexistente (404).
 - Grava o débito na origem e o crédito no destino, os dois com o `transferencia_id`, numa transação só: ou entram os dois, ou nenhum
 - Resposta 201: `{ "transferencia_id": "uuid", "saldo_origem": 7500 }` (saldo da origem depois do débito)
 - Erros: 400 (dados inválidos), 404 (`conta de origem não encontrada` ou `conta de destino não encontrada`), 422 (`saldo insuficiente`; nada é gravado)
-- **Versão ingênua (etapa 2):** confere o saldo sem travar a conta. Dois Pix simultâneos na mesma conta podem passar os dois e deixá-la negativa. É o furo da tag `v0-ingenua`; o lock entra na etapa 3
+- **Concorrência (etapa 3):** a conta de origem fica travada com `SELECT ... FOR NO KEY UPDATE` até o fim da transação, e o saldo só é conferido depois do lock. Dois Pix simultâneos saindo da mesma conta passam um de cada vez, e a conta nunca fica negativa. A trava é só na origem e não usa `FOR UPDATE`, porque esse lock conflita com o da FK de `lancamento` na conta de destino e o Pix cruzado (A→B e B→A ao mesmo tempo) daria deadlock. A versão sem lock está guardada na tag `v0-ingenua`
 - Ainda não é idempotente: repetir com o mesmo `transferencia_id` lança de novo (também etapa 3)
 
 ### GET /interno/verificacao
@@ -163,18 +163,21 @@ Transferência, como o cliente vê (ids de conta e de usuário ficam de fora):
 
 ### POST /transferencias
 - Autenticação: sim
+- Cabeçalho obrigatório: `Idempotency-Key: <uuid>`. O cliente gera um UUID por Pix (`crypto.randomUUID()`) e, se precisar repetir **aquele** Pix (erro de rede, timeout, clique duplo), manda a **mesma** chave. A chave é de cada usuário: a mesma chave usada por outra pessoa é outro Pix. Maiúsculas e minúsculas contam como a mesma chave
 - Corpo: `{ "chave_destino": "string", "valor": 2500 }`
   - `chave_destino`: 1 a 140 caracteres, normalizada como em Contas (sem espaços nas pontas e em minúsculas)
   - `valor`: inteiro maior que zero, no máximo 100000000 (R$ 1.000.000,00)
-- Passo a passo: acha a conta de quem está logado (`GET /interno/contas?usuario_id=`) e a da chave (`?chave=`), grava a transferência como `pendente`, chama `POST /interno/movimentacoes` de Contas e grava `concluida` ou `falhou`. Quando conclui, grava o evento `transferencia.concluida` na outbox na mesma transação
+- Passo a passo: se a chave já foi usada por este usuário, responde como repetição (abaixo) sem chamar Contas. Senão, acha a conta de quem está logado (`GET /interno/contas?usuario_id=`) e a da chave (`?chave=`), grava a transferência como `pendente`, chama `POST /interno/movimentacoes` de Contas e grava `concluida` ou `falhou`. Quando conclui, grava o evento `transferencia.concluida` na outbox na mesma transação
 - Resposta 201: a transferência, com `status: "concluida"`
+- Resposta 202: a transferência, com `status: "pendente"`. Só acontece na repetição: o Pix original ainda está rodando ou ficou pendente porque Contas caiu no meio. O dinheiro não é mexido de novo; o cliente pode consultar `GET /transferencias/{id}` depois
+- Repetição (mesma chave, mesmo destino, mesmo valor): devolve a resposta do Pix original. Concluído → 201 com a mesma transferência (mesmo `id`); falhou → o mesmo 422 com o mesmo motivo; pendente → 202. Contas não é chamado de novo, então a repetição funciona mesmo com Contas fora do ar. Pedidos simultâneos com a mesma chave movem o dinheiro uma vez só (UNIQUE em `usuario_origem, chave_idempotencia`)
 - Erros:
-  - 400: dados inválidos
+  - 400: dados inválidos, `o cabeçalho Idempotency-Key é obrigatório` ou `o cabeçalho Idempotency-Key deve ser um UUID`
   - 401
   - 404: `chave pix não encontrada`
-  - 422: `você ainda não tem conta`, `não dá para mandar Pix para a própria conta` (nada gravado) ou `saldo insuficiente` (gravada como `falhou`)
+  - 422: `você ainda não tem conta`, `não dá para mandar Pix para a própria conta` (nada gravado), `saldo insuficiente` (gravada como `falhou`) ou `esta Idempotency-Key já foi usada em outro Pix` (mesma chave com outro destino ou outro valor; nada é feito)
   - 503: `serviço de contas indisponível`. Se Contas caiu antes da movimentação, nada é gravado; se caiu durante, a transferência fica `pendente`
-- **Versão ingênua (etapa 2):** sem cabeçalho `Idempotency-Key`, sem novas tentativas e sem rotina de pendentes. Os três entram na etapa 3
+- **Ainda falta (etapa 3):** novas tentativas na chamada a Contas e a rotina de pendentes. Até lá, uma transferência que ficou `pendente` continua pendente
 
 ### GET /transferencias/{id}
 - Autenticação: sim
