@@ -6,6 +6,7 @@ import { rotasUsuarios } from './usuarios/rotas.js'
 import { criarRotasFirebase } from './usuarios/rotasFirebase.js'
 import { criarVerificadorFirebase } from './firebase/verificador.js'
 import { tratarErros } from './erros.js'
+import { recusarCaractereNulo } from './caractereNulo.js'
 
 // Monta o app sem abrir porta. Assim os testes usam o mesmo app sem subir servidor.
 // Os testes passam um verificador do Firebase falso; em produção vale o de verdade.
@@ -19,6 +20,7 @@ export function criarApp({
     optionsSuccessStatus: 200,
   }))
   app.use(express.json({ limit: '10kb' }))
+  app.use(recusarCaractereNulo) // logo depois do JSON: o corpo já está lido
 
   app.get('/auth/saude', async (req, res) => {
     await pool.query('SELECT 1')

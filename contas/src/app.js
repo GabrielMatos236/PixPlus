@@ -3,6 +3,7 @@ import cors from 'cors'
 import { config } from './config.js'
 import { pool } from './db.js'
 import { tratarErros } from './erros.js'
+import { recusarCaractereNulo } from './caractereNulo.js'
 import { rotasContas } from './contas/rotas.js'
 
 export function criarApp() {
@@ -13,6 +14,7 @@ export function criarApp() {
     optionsSuccessStatus: 200,
   }))
   app.use(express.json({ limit: '10kb' }))
+  app.use(recusarCaractereNulo) // logo depois do JSON: o corpo já está lido
 
   app.get('/contas/saude', async (req, res) => {
     await pool.query('SELECT 1')
