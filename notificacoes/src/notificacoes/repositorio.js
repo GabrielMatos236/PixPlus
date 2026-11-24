@@ -1,4 +1,9 @@
 import { pool } from '../db.js'
+// Mesmo formato do front: "R$ 1.234.567,89". O Intl separa "R$" do número com
+// um espaço não separável (\u00a0); trocado por espaço comum para o texto
+// gravado ser o mesmo que se digita num teste ou numa busca.
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+const formatarReais = (centavos) => brl.format(centavos / 100).replace(/\u00a0/g, ' ')
 
 export async function listarNotificacoes(usuarioId, pagina, limite) {
   const deslocamento = (pagina - 1) * limite
@@ -63,9 +68,7 @@ export async function receberEvento(evento) {
 
     const dados = evento.dados
 
-    const reais = Math.floor(dados.valor / 100)
-    const centavos = String(dados.valor % 100).padStart(2, '0')
-    const valorFormatado = `R$ ${reais},${centavos}`
+    const valorFormatado = formatarReais(dados.valor)
 
     await cliente.query(
       `INSERT INTO notificacao (evento_id, usuario_id, mensagem)
@@ -86,4 +89,15 @@ export async function receberEvento(evento) {
   } finally {
     cliente.release()
   }
+}
+
+export async function excluirNotificacao(id, usuarioId) {
+  const resultado = await pool.query(
+    `DELETE FROM notificacao
+     WHERE id = $1 AND usuario_id = $2
+     RETURNING id`,
+    [id, usuarioId],
+  )
+
+  return resultado.rowCount > 0
 }

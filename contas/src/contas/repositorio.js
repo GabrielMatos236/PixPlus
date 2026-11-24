@@ -1,4 +1,5 @@
 import { pool } from '../db.js'
+import { ErroHttp } from '../erros.js'
 
 // O Postgres recusa (com erro, que virava 500) um id que não tem formato de UUID.
 // Conferir antes deixa "GET /contas/abc" responder 404, como qualquer conta inexistente.
@@ -125,70 +126,56 @@ export async function verificacao() {
 }
 
 // ─── Movimentação (débito + crédito atômicos) ───────────────
-
+//
+// Etapa 3: a conta de ORIGEM fica travada (FOR NO KEY UPDATE) do momento em que
+// as contas são conferidas até o COMMIT. Dois Pix saindo da mesma conta não leem
+// mais o mesmo saldo: o segundo espera o primeiro terminar e só então soma os
+// lançamentos, já vendo o débito que acabou de entrar. A versão sem lock, que
+// deixava a conta negativa, está guardada na tag v0-ingenua.
+//
+// Débito e crédito usam o MESMO cliente do pool (pool.connect). Com pool.query,
+// cada comando pode cair numa conexão diferente e o BEGIN/COMMIT não vale.
 export async function executarMovimentacao(transferenciaId, contaOrigem, contaDestino, valor) {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
 
-    // 1. Buscar conta de origem
-    const { rows: [origem] } = await client.query(
-      'SELECT id, usuario_id FROM conta WHERE id = $1',
-      [contaOrigem],
+    const { rows: contas } = await client.query(
+      'SELECT id FROM conta WHERE id = ANY($1::uuid[])',
+      [[contaOrigem, contaDestino]],
     )
-    if (!origem) {
-      const { ErroHttp } = await import('../erros.js')
-      throw new ErroHttp(404, 'conta de origem não encontrada')
-    }
+    const existe = (id) => contas.some((conta) => conta.id === id)
+    if (!existe(contaOrigem)) throw new ErroHttp(404, 'conta de origem não encontrada')
+    if (!existe(contaDestino)) throw new ErroHttp(404, 'conta de destino não encontrada')
 
-    // 2. Buscar conta de destino
-    const { rows: [destino] } = await client.query(
-      'SELECT id FROM conta WHERE id = $1',
-      [contaDestino],
-    )
-    if (!destino) {
-      const { ErroHttp } = await import('../erros.js')
-      throw new ErroHttp(404, 'conta de destino não encontrada')
-    }
+    // Trava a linha da conta de ORIGEM até o COMMIT. Outro Pix saindo da
+    // mesma conta espera aqui e só lê o saldo depois que este débito entrou.
+    // FOR NO KEY UPDATE, e não FOR UPDATE: o INSERT em lancamento confere a FK
+    // conta_id com um FOR KEY SHARE na conta de destino. FOR UPDATE conflita com
+    // esse lock e o Pix cruzado (A→B e B→A ao mesmo tempo) dá deadlock;
+    // FOR NO KEY UPDATE não conflita, mas continua barrando outro débito da mesma conta.
+    // Funciona no READ COMMITTED padrão: o SUM abaixo é outro comando, então
+    // ele já enxerga o que foi commitado enquanto este Pix esperava o lock.
+    await client.query('SELECT id FROM conta WHERE id = $1 FOR NO KEY UPDATE', [contaOrigem])
 
-    // 3. Calcular saldo da origem
     const { rows: [{ saldo }] } = await client.query(
-      `SELECT
-         COALESCE(SUM(CASE WHEN tipo = 'credito' THEN valor ELSE 0 END), 0)
-         -
-         COALESCE(SUM(CASE WHEN tipo = 'debito' THEN valor ELSE 0 END), 0)
-         AS saldo
+      `SELECT COALESCE(SUM(CASE WHEN tipo = 'credito' THEN valor ELSE -valor END), 0) AS saldo
        FROM lancamento
        WHERE conta_id = $1`,
       [contaOrigem],
     )
     const saldoAtual = parseInt(saldo, 10)
 
-    if (saldoAtual < valor) {
-      const { ErroHttp } = await import('../erros.js')
-      throw new ErroHttp(422, 'saldo insuficiente')
-    }
+    if (saldoAtual < valor) throw new ErroHttp(422, 'saldo insuficiente')
 
-    // 4. Débito na origem
     await client.query(
       `INSERT INTO lancamento (conta_id, tipo, valor, transferencia_id)
-       VALUES ($1, 'debito', $2, $3)`,
-      [contaOrigem, valor, transferenciaId],
-    )
-
-    // 5. Crédito no destino
-    await client.query(
-      `INSERT INTO lancamento (conta_id, tipo, valor, transferencia_id)
-       VALUES ($1, 'credito', $2, $3)`,
-      [contaDestino, valor, transferenciaId],
+       VALUES ($1, 'debito', $3, $4), ($2, 'credito', $3, $4)`,
+      [contaOrigem, contaDestino, valor, transferenciaId],
     )
 
     await client.query('COMMIT')
-
-    return {
-      transferencia_id: transferenciaId,
-      saldo_origem: saldoAtual - valor,
-    }
+    return { transferencia_id: transferenciaId, saldo_origem: saldoAtual - valor }
   } catch (erro) {
     await client.query('ROLLBACK')
     throw erro

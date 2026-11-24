@@ -25,10 +25,18 @@ test('GET /transferencias/saude responde com o banco ligado', async () => {
 })
 
 test('rota que não existe devolve 404 em JSON', async () => {
-  const resposta = await request(app).get('/transferencias/nao-existe')
+  const resposta = await request(app).get('/nao-existe')
 
   assert.equal(resposta.status, 404)
   assert.deepEqual(resposta.body, { erro: 'rota não encontrada' })
+})
+
+test('rotas do Pix sem token devolvem 401, mas a saúde não pede token', async () => {
+  const pix = await request(app).post('/transferencias').send({ chave_destino: 'a@pix', valor: 100 })
+  const consulta = await request(app).get('/transferencias/qualquer')
+
+  assert.equal(pix.status, 401)
+  assert.equal(consulta.status, 401)
 })
 
 test('rotas /interno de outros serviços não existem aqui', async () => {

@@ -1,22 +1,35 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { chamar } from '../api'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../firebase'
+import { entrarNoZync, mensagemFirebase } from '../entrada'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
+  const [ocupado, setOcupado] = useState(false)
   const navegar = useNavigate()
 
   async function entrar(e) {
     e.preventDefault()
     setErro('')
+    setOcupado(true)
     try {
-      const dados = await chamar('/auth/login', { metodo: 'POST', corpo: { email, senha } })
-      localStorage.setItem('token', dados.token)
-      navegar('/')
+      const credencial = await signInWithEmailAndPassword(auth, email, senha)
+      try {
+        await entrarNoZync(credencial.user)
+        navegar('/')
+      } catch (err) {
+        // 422 com "detalhes": existe no Firebase mas falta o cadastro no Auth
+        // (o cadastro caiu no meio). Vai pra tela de completar.
+        if (err.status === 422 && err.dados?.detalhes) navegar('/completar')
+        else throw err
+      }
     } catch (err) {
-      setErro(err.status === 401 ? 'E-mail ou senha incorretos' : err.message)
+      setErro(mensagemFirebase(err))
+    } finally {
+      setOcupado(false)
     }
   }
 
@@ -28,7 +41,7 @@ export default function Login() {
       <input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
       <input type="password" placeholder="Senha" value={senha} onChange={(e) => setSenha(e.target.value)} required />
       {erro && <p role="alert">{erro}</p>}
-      <button type="submit">Entrar</button>
+      <button type="submit" disabled={ocupado}>{ocupado ? 'Entrando...' : 'Entrar'}</button>
       <p className="sub">Ainda não tem conta? <Link to="/cadastro">Criar conta</Link></p>
     </form>
   )

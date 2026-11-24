@@ -6,6 +6,11 @@ const esquema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   PORT: z.coerce.number().int().positive().default(3000),
   JWT_SECRET: z.string().min(32, 'precisa ter pelo menos 32 caracteres'),
+  // Endereço de Contas dentro da rede do compose. Sem barra no fim.
+  CONTAS_URL: z
+    .url({ protocol: /^https?$/ })
+    .default('http://contas:3000')
+    .transform((url) => url.replace(/\/+$/, '')),
   CORS_ORIGINS: z
     .string()
     .default('http://localhost:5173')

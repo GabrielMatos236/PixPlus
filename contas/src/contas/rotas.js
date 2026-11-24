@@ -25,7 +25,6 @@ import {
   encerrarConta,
 } from './repositorio.js'
 
-
 export const rotasContas = Router()
 const validarToken = criarValidarToken(config.JWT_SECRET)
 const DUPLICADO = '23505'
@@ -57,6 +56,7 @@ rotasContas.get('/interno/verificacao', async (req, res) => {
   res.json(resultado)
 })
 
+// Débito na origem e crédito no destino de um Pix. Quem chama é Transferências.
 rotasContas.post('/interno/movimentacoes', async (req, res) => {
   const dados = validar(esquemaMovimentacao, req.body)
   const resultado = await executarMovimentacao(

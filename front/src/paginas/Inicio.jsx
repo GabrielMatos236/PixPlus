@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { chamar } from '../api'
 import { reais, dataHora, paraCentavos } from '../formatar'
 import CriarChave from '../componentes/CriarChave'
+import { signOut } from 'firebase/auth'
+import { auth } from '../firebase'
 
 function saudacao() {
   const h = new Date().getHours()
@@ -28,11 +30,13 @@ export default function Inicio() {
   const [valor, setValor] = useState('')
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(true)
+  const [depositando, setDepositando] = useState(false)
 
-  const sair = useCallback(() => {
+    const sair = useCallback(() => {
     localStorage.removeItem('token')
+    signOut(auth)
     navegar('/login')
-  }, [navegar])
+   }, [navegar])
 
   const carregarConta = useCallback(async (c) => {
     const [s, e] = await Promise.all([
@@ -65,14 +69,16 @@ export default function Inicio() {
     iniciar()
   }, [carregarConta, sair])
 
-  async function depositar(e) {
+    async function depositar(e) {
     e.preventDefault()
+    if (depositando) return // clique duplo: o segundo não faz nada
     setErro('')
     const centavos = paraCentavos(valor)
     if (!centavos) {
       setErro('Digite um valor entre 0,01 e 1.000.000,00, como 50,00')
       return
     }
+    setDepositando(true)
     try {
       await chamar(`/contas/${conta.id}/depositos`, { metodo: 'POST', corpo: { valor: centavos } })
       setValor('')
@@ -80,6 +86,8 @@ export default function Inicio() {
     } catch (err) {
       if (err.status === 401) sair()
       else setErro(err.message)
+    } finally {
+      setDepositando(false)
     }
   }
 
@@ -119,7 +127,8 @@ export default function Inicio() {
         <div className="saldo">{mostrar ? reais(saldo) : 'R$ ••••'}</div>
         <span className="chave">Chave Pix: {conta?.chave_pix}</span>
       </section>
-
+          <Link to="/pix" className="botao-pix">Enviar Pix</Link>
+          
       <form className="deposito" onSubmit={depositar}>
         <input
           inputMode="decimal"
@@ -128,7 +137,9 @@ export default function Inicio() {
           value={valor}
           onChange={(e) => setValor(e.target.value)}
         />
-        <button type="submit">Depositar</button>
+        <button type="submit" disabled={depositando}>
+          {depositando ? 'Processando...' : 'Depositar'}
+        </button>
       </form>
       {erro && <p role="alert">{erro}</p>}
 

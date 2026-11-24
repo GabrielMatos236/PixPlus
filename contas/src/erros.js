@@ -22,6 +22,12 @@ export function tratarErros(erro, req, res, next) {
     return res.status(400).json({ erro: 'corpo da requisição não é um JSON válido' })
   }
 
+  // Caminho com "%" inválido (ex.: /transferencias/%ZZ): o Express não consegue
+  // decodificar o parâmetro e lança URIError. É erro de quem pediu, não do servidor.
+  if (erro instanceof URIError) {
+    return res.status(400).json({ erro: 'caminho inválido' })
+  }
+
   console.error('[contas] erro inesperado:', erro)
   res.status(500).json({ erro: 'erro interno' })
 }

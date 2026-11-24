@@ -5,5 +5,5 @@ import { config } from './config.js'
 // entre requisições, em vez de abrir uma nova a cada pedido.
 export const pool = new pg.Pool({
   connectionString: config.DATABASE_URL,
-  max: 10,
+  max: Number(process.env.DB_POOL_MAX) || 10,
 })

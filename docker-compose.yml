@@ -68,8 +68,10 @@ services:
     build: ./auth
     environment:
       DATABASE_URL: postgres://auth:${AUTH_DB_PASSWORD}@auth-db:5432/auth
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
     depends_on:
       auth-db:
         condition: service_healthy
@@ -93,6 +95,7 @@ services:
     build: ./contas
     environment:
       DATABASE_URL: postgres://contas:${CONTAS_DB_PASSWORD}@contas-db:5432/contas
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
     depends_on:
@@ -108,8 +111,10 @@ services:
     build: ./transferencias
     environment:
       DATABASE_URL: postgres://transferencias:${TRANSFERENCIAS_DB_PASSWORD}@transferencias-db:5432/transferencias
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      CONTAS_URL: http://contas:3000
     depends_on:
       transferencias-db:
         condition: service_healthy
@@ -123,6 +128,7 @@ services:
     build: ./notificacoes
     environment:
       DATABASE_URL: postgres://notificacoes:${NOTIFICACOES_DB_PASSWORD}@notificacoes-db:5432/notificacoes
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
     depends_on:
@@ -144,6 +150,7 @@ services:
       disable: true
     environment:
       DATABASE_URL: postgres://transferencias:${TRANSFERENCIAS_DB_PASSWORD}@transferencias-db:5432/transferencias
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
       JWT_SECRET: ${JWT_SECRET}
       NOTIFICACOES_URL: http://notificacoes:3000
     depends_on:

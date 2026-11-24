@@ -82,3 +82,13 @@ button[type='submit']:hover { background: var(--zync-ouro-claro); }
 .valor { font-weight: 600; }
 .entrada { color: var(--zync-ouro); }
 .saida { color: var(--zync-texto); }
+.pix { display: flex; flex-direction: column; gap: 16px; }
+.botao-pix {
+  display: flex; align-items: center; justify-content: center;
+  height: 56px; border-radius: var(--zync-raio-pilula);
+  background: var(--zync-ouro); color: var(--zync-texto-sobre-ouro);
+  font-weight: 600; font-size: 16px;
+}
+.botao-pix:hover { background: var(--zync-ouro-claro); color: var(--zync-texto-sobre-ouro); }
+.comprovante { background: var(--zync-superficie); border-radius: var(--zync-raio-card); padding: 20px; display: flex; flex-direction: column; gap: 4px; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }

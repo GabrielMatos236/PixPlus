@@ -1,0 +1,121 @@
+FERRAMENTAS DO PIXPLUS
+================================
+
+--- BANCO E DADOS ---
+
+pg (node-postgres) -> conversa com o postgres, a gente escreve o SQL na mão | no lugar de: Prisma, Sequelize, TypeORM, Knex, Drizzle, MikroORM, Objection, Mongoose
+  pq-> o projeto inteiro gira em torno de lock (SELECT ... FOR UPDATE e SKIP LOCKED). o Prisma nao tem isso no jeito normal, ia ter que escrever SQL cru ($queryRaw) justo nas partes que importam. com o pg o SQL que roda é o que ta no codigo, da pra mostrar linha por linha
+  e o Knex? so monta SQL por funções, nao ajuda nada no lock. SQL direto ficou mais facil de ler e explicar
+
+postgres 16 -> os 4 bancos, um pra cada serviço. e tb faz de fila de mensagem (tabela outbox) | no lugar de: MySQL, MariaDB, MongoDB, SQLite, SQL Server, Oracle, Redis
+  pq: transação confiavel e o SKIP LOCKED, que deixa 2 workers lerem a mesma fila sem pegar o mesmo evento. Mongo nem combina com dinheiro, a gente precisa de transação de verdade
+
+node-pg-migrate -> cria e altera as tabelas com arquivos .sql numerados na pasta migrations/, roda sozinho quando o container sobe | no lugar de: Prisma Migrate, Knex migrations, Sequelize CLI, Flyway, Liquibase, db-migrate, umzug
+  pq: aceita SQL puro, combina com o pg, e nao precisa de ORM
+
+um banco por serviço -> cada serviço tem o seu, ninguem mexe no banco do outro | no lugar de: um banco só compartilhado (monolito)
+  pq: é a regra de microserviço. cada um é dono dos seus dados e só fala com o outro pela API. da pra mudar ou escalar um sem quebrar os outros
+
+dinheiro em centavos (inteiro) -> R$ 10,50 vira 1050 | no lugar de: float, double, decimal no JS
+  pq: 0.1 + 0.2 da 0.30000000000000004 em float. com inteiro a conta sempre fecha
+
+
+--- MENSAGERIA ---
+
+tabela outbox + worker -> o Pix grava o evento "transferencia.concluida" na mesma transação, e o worker entrega pras Notificações depois | no lugar de: RabbitMQ, Kafka, Redis pub/sub, BullMQ, AWS SQS, NATS
+  pq: o requisito era mensageria via banco. e o evento ta na mesma transação do Pix: ou salva os dois ou nenhum. com fila separada o Pix podia concluir e o aviso sumir
+
+
+--- BACK-END ---
+
+node 22 -> roda os 4 serviços e o worker | no lugar de: Python (Django, FastAPI, Flask), Java (Spring), Go, PHP (Laravel), C# (.NET), Deno, Bun
+  pq: o grupo decidiu que node é a ferramenta principal, e o resto foi escolhido pra combinar com ele
+
+express 5 -> as rotas (app.get, app.post) e os middlewares, tipo o que confere o token | no lugar de: Fastify, NestJS, Koa, Hapi, AdonisJS
+  pq: ta nos requisitos oficiais do sor. e é o mais conhecido, tem material pra tudo
+
+zod -> valida o corpo da requisição (campo faltando, tipo errado). se falhar devolve 400 antes de chegar no banco | no lugar de: Joi, Yup, express-validator, class-validator, Ajv, Valibot, validar na mão com if
+  pq: a regra fica escrita num lugar só e é bem curtinho de ler
+
+cors -> deixa o front (que roda em outro endereço) chamar a API pelo navegador | no lugar de: setar os headers na mão, resolver tudo no nginx
+  pq: é 1 linha e ja vem com lista de origens liberadas
+
+fetch (já vem no node) -> é como um serviço chama o outro (transferencias chama contas, worker chama notificações) | no lugar de: axios, got, node-fetch, superagent
+  pq: ja vem no node 22, nao precisa instalar nada
+
+node:crypto (já vem no node) -> gera UUID | no lugar de: pacote uuid
+  pq: mesma coisa, ja vem no node
+
+
+--- LOGIN E SEGURANÇA ---
+
+firebase authentication -> login com google e com email e senha. é a autenticação externa que o sor pediu | no lugar de: Auth0, Keycloak, Supabase Auth, Clerk, AWS Cognito, Passport com Google OAuth, NextAuth
+  pq: o proprio sor sugeriu firebase, tem plano gratis e já faz o login do google pronto
+
+firebase-admin -> no Auth, confere o token que o firebase deu pro front (verifyIdToken) e troca pelo nosso JWT | no lugar de: chamar a API do google na mão
+  pq: é a lib oficial, e só precisa do id do projeto, sem chave secreta
+
+jsonwebtoken -> o Auth assina o JWT (vale 1h). os outros serviços conferem sozinhos com o JWT_SECRET, sem perguntar pro Auth | no lugar de: jose, passport-jwt, express-jwt, sessão com cookie (express-session)
+  pq: com sessão, todo serviço teria que perguntar pro Auth a cada request e o Auth vira gargalo. com JWT cada um confere sozinho
+
+"pq firebase E jwt junto?" -> o firebase prova quem é a pessoa. dai o Auth entrega o nosso JWT, que os 4 serviços conferem sem chamar o google toda hora
+
+argon2 -> transforma a senha em hash antes de salvar, o banco nunca ve a senha | no lugar de: bcrypt, bcryptjs, scrypt, pbkdf2, MD5, SHA-256
+  pq: é o recomendado hoje e gasta memoria de proposito, ai fica ruim de quebrar com placa de video. no começo deixou o login lento na carga (p95 de 6,38s), ai a gente deixou mais leve no PR #23
+  MD5 e SHA puro: NUNCA pra senha, sao rapidos demais de quebrar
+
+
+--- INFRA ---
+
+docker + docker compose -> um container pra cada serviço e pra cada banco. "docker compose up" sobe tudo, "--scale" cria replicas | no lugar de: Kubernetes, Docker Swarm, Podman, rodar tudo na mão
+  pq: o sor pediu container, e o compose com --scale ja mostra escala horizontal. kubernetes seria canhão pra matar mosca no tamanho do projeto
+
+nginx -> a porta de entrada (porta 80). manda /auth, /contas, /transferencias e /notificacoes pro serviço certo, bloqueia /interno e divide a carga entre replicas | no lugar de: Traefik, HAProxy, Caddy, Kong, Apache, API gateway em node
+  pq: é o mais usado, leve, e o front fala com um endereço só
+
+vercel (só no fim, se der tempo) -> publicar o front | no lugar de: Netlify, Render, Railway, Heroku, Oracle Cloud
+  pq: deploy do front em react é praticamente de graça e automatico
+
+git + github -> codigo, branches e PR, todo PR com revisão de alguem | no lugar de: GitLab, Bitbucket
+
+powershell -> só o script de coletar os saldos no windows (carga/coletar-saldos.ps1) | no lugar de: bash
+
+
+--- TESTES ---
+
+node --test (já vem no node) -> roda os testes automatizados de cada serviço | no lugar de: Jest, Vitest, Mocha, Jasmine, AVA
+  pq: ja vem no node, zero config, e da conta do que a gente precisa
+
+supertest -> chama as rotas nos testes sem precisar subir o servidor | no lugar de: Postman, Newman, Insomnia, axios contra o servidor rodando
+  pq: roda junto com o npm test, sem ninguem ter que clicar em nada
+
+k6 -> teste de carga: simula centenas de usuarios ao mesmo tempo e mede req/s e p95. é ele que mostra as contas negativas na versão ingenua | no lugar de: JMeter, Locust, Artillery, Gatling, autocannon, Apache Bench (ab), wrk
+  pq: script em javascript (mesma linguagem do resto), e ja da req/s e p95 prontinho
+
+
+--- FRONT ---
+
+react 19 + react-dom -> as telas (login, completar cadastro, inicio, enviar pix) | no lugar de: Vue, Angular, Svelte, Next.js, React Native
+  pq: é o mais usado e o grupo ja conhecia. web e nao react native pq a demo abre no navegador do celular, sem instalar app
+
+react-router-dom 7 -> troca de tela sem recarregar a pagina | no lugar de: TanStack Router, rotas do Next.js
+
+firebase (SDK web) -> o botão de entrar com google e o login com email e senha, e o getIdToken() que vai pro Auth | no lugar de: os SDKs do Auth0, Supabase etc
+
+vite -> sobe o front em modo dev com recarga automatica e faz o build | no lugar de: Create React App, Webpack, Parcel
+  pq: o CRA morreu (descontinuado) e o vite é muito mais rapido
+
+eslint -> aponta erro comum no react, tipo hook no lugar errado | no lugar de: Biome, StandardJS
+
+fetch do navegador -> o front chama a API | no lugar de: axios, ky
+  pq: ja vem no navegador, nao precisa de lib
+
+
+--- COISAS QUE A GENTE NÃO USA (e pq) ---
+
+TypeScript -> nao usa, é JS puro | pq: prazo curto e nem todo mundo do grupo conhece. o zod ja segura os dados errados que chegam nas rotas
+Swagger / OpenAPI -> nao usa (ainda) | as rotas tao todas em docs/contratos.md. swagger completo ficou na lista do que corta se o tempo apertar
+Redis / cache -> nao usa | o saldo responde com p95 de 12ms, nao precisou
+Kubernetes -> nao usa | compose com --scale ja mostra a escala
+CI (GitHub Actions) -> nao usa | ta na lista de corte. todo PR passa por revisão de outra pessoa
+ORM nenhum -> ver a linha do pg ali em cima

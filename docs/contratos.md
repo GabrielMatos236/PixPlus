@@ -4,6 +4,8 @@ Cada serviço documenta aqui as próprias rotas. Mudou a rota, muda este arquivo
 
 Regras: dinheiro em centavos (inteiro), rotas em minúsculas, rotas `/interno/...` só entre serviços (o nginx não expõe).
 
+Entrada inválida (Auth, Contas e Transferências): texto com o caractere nulo `\u0000`, no corpo ou na query string, devolve 400 `dados inválidos: o texto não pode ter o caractere nulo (\u0000)`. Caminho com `%` inválido (ex.: `/transferencias/%ZZ`) devolve 400 `caminho inválido`.
+
 Modelo para cada rota:
 
 ```
@@ -41,6 +43,23 @@ Formato de erro de todos os endpoints: `{ "erro": "mensagem" }`. Erros de valida
   - JWT HS256 com validade de 1 hora; o conteúdo leva só `sub` (id do usuário), `iat` e `exp`
   - Os outros serviços conferem o token localmente com o mesmo `JWT_SECRET`, mandado no cabeçalho `Authorization: Bearer <token>`
 - Erros: 400 (dados inválidos), 401 (e-mail ou senha incorretos; mesma resposta para e-mail inexistente e senha errada)
+
+### POST /auth/firebase
+- Autenticação: não (quem autentica é o Firebase)
+- Troca o token do Firebase (login com Google ou com e-mail e senha do Firebase) pelo nosso JWT
+- Corpo: `{ "idToken": "string", "nome": "string (opcional)", "cpf": "string (opcional)" }`
+  - `idToken`: o que o SDK do Firebase devolve depois do login (`await usuario.getIdToken()`)
+  - `nome` e `cpf`: só no primeiro acesso, mesmas regras do cadastro. No login com Google, o nome vem do Google se não for mandado
+- Resposta 200 (já tinha entrado antes) ou 201 (primeiro acesso, usuário criado): `{ "token": "string" }`, o mesmo JWT do `POST /auth/login`
+- Erros:
+  - 400: dados inválidos
+  - 401: `token do firebase inválido ou expirado`
+  - 409: `e-mail já cadastrado` (o e-mail já tem cadastro com senha; as contas não são ligadas) ou `cpf já cadastrado`
+  - 422: `complete o cadastro`, com `detalhes` dizendo o que falta (`nome`, `cpf` ou os dois). O front mostra a tela de completar cadastro e manda de novo com o mesmo `idToken`; ou `a conta do firebase precisa ter e-mail`
+  - 503: `firebase indisponível, tente de novo` (o Auth não conseguiu falar com o Google) ou `login pelo firebase não configurado no servidor` (falta `FIREBASE_PROJECT_ID`)
+- Quem entra pelo Firebase não tem senha no Auth: `POST /auth/login` responde 401 para esse e-mail
+
+**`POST /auth/cadastro` e `POST /auth/login` continuam**, mas o front usa o Firebase. Os dois ficam para os testes de carga e o seed: o k6 não pode fazer milhares de logins no Firebase.
 
 ### GET /auth/eu
 - Autenticação: sim, `Authorization: Bearer <token>`
@@ -99,6 +118,17 @@ Id de conta que não é UUID responde como conta inexistente (404).
 - Resposta 200: `{ "id": "uuid", "usuario_id": "uuid" }`
 - Erros: 400 (nenhum ou os dois parâmetros, ou `usuario_id` que não é UUID), 404 (`chave pix não encontrada` ou `usuário sem conta`)
 
+### POST /interno/movimentacoes
+- Só entre serviços (usada por Transferências), sem token
+- Corpo: `{ "transferencia_id": "uuid", "conta_origem": "uuid", "conta_destino": "uuid", "valor": 2500 }`
+  - `valor`: inteiro maior que zero, no máximo 100000000 (R$ 1.000.000,00)
+  - `conta_destino` diferente de `conta_origem`
+- Grava o débito na origem e o crédito no destino, os dois com o `transferencia_id`, numa transação só: ou entram os dois, ou nenhum
+- Resposta 201: `{ "transferencia_id": "uuid", "saldo_origem": 7500 }` (saldo da origem depois do débito)
+- Erros: 400 (dados inválidos), 404 (`conta de origem não encontrada` ou `conta de destino não encontrada`), 422 (`saldo insuficiente`; nada é gravado)
+- **Concorrência (etapa 3):** a conta de origem fica travada com `SELECT ... FOR NO KEY UPDATE` até o fim da transação, e o saldo só é conferido depois do lock. Dois Pix simultâneos saindo da mesma conta passam um de cada vez, e a conta nunca fica negativa. A trava é só na origem e não usa `FOR UPDATE`, porque esse lock conflita com o da FK de `lancamento` na conta de destino e o Pix cruzado (A→B e B→A ao mesmo tempo) daria deadlock. A versão sem lock está guardada na tag `v0-ingenua`
+- Ainda não é idempotente: repetir com o mesmo `transferencia_id` lança de novo (também etapa 3)
+
 ### GET /interno/verificacao
 - Só entre serviços (usada pelos testes de carga)
 - Resposta 200: `{ "soma_total": 0, "contas_negativas": [{ "id": "uuid", "chave_pix": "string", "saldo": -500 }] }`
@@ -111,7 +141,49 @@ Formato de erro igual ao do Auth: `{ "erro": "mensagem" }`, e erros de validaç�
 - Autenticação: não
 - Resposta 200: `{ "servico": "transferencias", "banco": true }`
 
-`POST /transferencias` e `GET /transferencias/{id}` entram na etapa 2, junto com o contrato de `POST /interno/movimentacoes` fechado com Contas.
+Rotas com autenticação usam `Authorization: Bearer <token>` e respondem 401 (`token ausente`, `token inválido` ou `token expirado`).
+Valores sempre em centavos (inteiro).
+
+Transferência, como o cliente vê (ids de conta e de usuário ficam de fora):
+
+```json
+{
+  "id": "uuid",
+  "chave_destino": "joao@pix",
+  "valor": 2500,
+  "status": "concluida",
+  "motivo_falha": null,
+  "criada_em": "data ISO",
+  "atualizada_em": "data ISO"
+}
+```
+
+- `status`: `pendente` (começou e não se sabe se terminou: Contas caiu no meio), `concluida` ou `falhou`
+- `motivo_falha`: só com `falhou`, ex.: `saldo insuficiente`
+
+### POST /transferencias
+- Autenticação: sim
+- Cabeçalho obrigatório: `Idempotency-Key: <uuid>`. O cliente gera um UUID por Pix (`crypto.randomUUID()`) e, se precisar repetir **aquele** Pix (erro de rede, timeout, clique duplo), manda a **mesma** chave. A chave é de cada usuário: a mesma chave usada por outra pessoa é outro Pix. Maiúsculas e minúsculas contam como a mesma chave
+- Corpo: `{ "chave_destino": "string", "valor": 2500 }`
+  - `chave_destino`: 1 a 140 caracteres, normalizada como em Contas (sem espaços nas pontas e em minúsculas)
+  - `valor`: inteiro maior que zero, no máximo 100000000 (R$ 1.000.000,00)
+- Passo a passo: se a chave já foi usada por este usuário, responde como repetição (abaixo) sem chamar Contas. Senão, acha a conta de quem está logado (`GET /interno/contas?usuario_id=`) e a da chave (`?chave=`), grava a transferência como `pendente`, chama `POST /interno/movimentacoes` de Contas e grava `concluida` ou `falhou`. Quando conclui, grava o evento `transferencia.concluida` na outbox na mesma transação
+- Resposta 201: a transferência, com `status: "concluida"`
+- Resposta 202: a transferência, com `status: "pendente"`. Só acontece na repetição: o Pix original ainda está rodando ou ficou pendente porque Contas caiu no meio. O dinheiro não é mexido de novo; o cliente pode consultar `GET /transferencias/{id}` depois
+- Repetição (mesma chave, mesmo destino, mesmo valor): devolve a resposta do Pix original. Concluído → 201 com a mesma transferência (mesmo `id`); falhou → o mesmo 422 com o mesmo motivo; pendente → 202. Contas não é chamado de novo, então a repetição funciona mesmo com Contas fora do ar. Pedidos simultâneos com a mesma chave movem o dinheiro uma vez só (UNIQUE em `usuario_origem, chave_idempotencia`)
+- Erros:
+  - 400: dados inválidos, `o cabeçalho Idempotency-Key é obrigatório` ou `o cabeçalho Idempotency-Key deve ser um UUID`
+  - 401
+  - 404: `chave pix não encontrada`
+  - 422: `você ainda não tem conta`, `não dá para mandar Pix para a própria conta` (nada gravado), `saldo insuficiente` (gravada como `falhou`) ou `esta Idempotency-Key já foi usada em outro Pix` (mesma chave com outro destino ou outro valor; nada é feito)
+  - 503: `serviço de contas indisponível`. Se Contas caiu antes da movimentação, nada é gravado; se caiu durante, a transferência fica `pendente`
+- **Ainda falta (etapa 3):** novas tentativas na chamada a Contas e a rotina de pendentes. Até lá, uma transferência que ficou `pendente` continua pendente
+
+### GET /transferencias/{id}
+- Autenticação: sim
+- Só quem enviou consulta
+- Resposta 200: a transferência
+- Erros: 401, 403 (`esta transferência não é sua`), 404 (`transferência não encontrada`, também para id que não é UUID)
 
 ### Eventos (outbox)
 
@@ -202,6 +274,15 @@ Cada usuário acessa apenas as próprias notificações.
 - Resposta 200:
   `{ "id": "uuid", "mensagem": "string", "lida": true, "criada_em": "data ISO" }`
 - Erros: 400 (corpo inválido), 401, 404 (notificação inexistente ou pertencente a outro usuário)
+
+### DELETE /notificacoes/{id}
+- Autenticação: sim, `Authorization: Bearer <token>`
+- Corpo: não possui
+- Apaga somente o aviso do usuário logado
+- Resposta 204: sem corpo
+- Erros: 401 (token ausente, inválido ou expirado), 404 (id inválido, aviso inexistente ou pertencente a outro usuário)
+- Repetir a exclusão de um aviso já apagado retorna 404
+- Excluir um aviso mantém o registro do evento recebido; uma reentrega do mesmo evento não recria o aviso
 
 ### POST /interno/eventos
 - Somente entre serviços, sem exposição pelo nginx

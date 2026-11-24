@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { chamar } from '../api'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../firebase'
+import { entrarNoZync, mensagemFirebase } from '../entrada'
 
 export default function Cadastro() {
   const [form, setForm] = useState({ nome: '', email: '', cpf: '', senha: '' })
   const [erro, setErro] = useState('')
+  const [ocupado, setOcupado] = useState(false)
   const navegar = useNavigate()
 
   const mudar = (campo) => (e) => setForm({ ...form, [campo]: e.target.value })
@@ -12,11 +15,15 @@ export default function Cadastro() {
   async function cadastrar(e) {
     e.preventDefault()
     setErro('')
+    setOcupado(true)
     try {
-      await chamar('/auth/cadastro', { metodo: 'POST', corpo: form })
-      navegar('/login')
+      const credencial = await createUserWithEmailAndPassword(auth, form.email, form.senha)
+      await entrarNoZync(credencial.user, { nome: form.nome, cpf: form.cpf })
+      navegar('/')
     } catch (err) {
-      setErro(err.status === 409 ? 'E-mail ou CPF já cadastrado' : err.message)
+      setErro(mensagemFirebase(err))
+    } finally {
+      setOcupado(false)
     }
   }
 
@@ -27,9 +34,9 @@ export default function Cadastro() {
       <input placeholder="Nome completo" value={form.nome} onChange={mudar('nome')} required />
       <input type="email" placeholder="E-mail" value={form.email} onChange={mudar('email')} required />
       <input placeholder="CPF" value={form.cpf} onChange={mudar('cpf')} required />
-      <input type="password" placeholder="Senha (8 a 128 caracteres)" value={form.senha} onChange={mudar('senha')} required />
+      <input type="password" placeholder="Senha (mínimo 8 caracteres)" minLength={8} value={form.senha} onChange={mudar('senha')} required />
       {erro && <p role="alert">{erro}</p>}
-      <button type="submit">Criar conta</button>
+      <button type="submit" disabled={ocupado}>{ocupado ? 'Criando...' : 'Criar conta'}</button>
       <p className="sub">Já tem conta? <Link to="/login">Entrar</Link></p>
     </form>
   )
