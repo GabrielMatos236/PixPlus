@@ -8,6 +8,7 @@ import {
   esquemaPaginacao,
   esquemaBuscaInterna,
   esquemaMovimentacao,
+  esquemaAtualizarChave,
   validar,
 } from './validacao.js'
 import {
@@ -20,6 +21,8 @@ import {
   listarExtrato,
   verificacao,
   executarMovimentacao,
+  atualizarChavePix,
+  encerrarConta,
 } from './repositorio.js'
 
 export const rotasContas = Router()
@@ -32,6 +35,11 @@ async function contaDoUsuario(req) {
   if (!conta) throw new ErroHttp(404, 'conta não encontrada')
   if (conta.usuario_id !== req.usuarioId) throw new ErroHttp(403, 'esta conta não é sua')
   return conta
+}
+
+// Barra operações em conta que já foi encerrada.
+function recusarEncerrada(conta) {
+  if (conta.encerrada_em) throw new ErroHttp(422, 'conta encerrada')
 }
 
 // ─── Rotas internas (sem JWT; o nginx bloqueia /interno) ─
@@ -99,6 +107,7 @@ rotasContas.get('/contas/:id', async (req, res) => {
 rotasContas.post('/contas/:id/depositos', async (req, res) => {
   const { valor } = validar(esquemaDeposito, req.body)
   const conta = await contaDoUsuario(req)
+  recusarEncerrada(conta)
 
   const lancamento = await criarLancamento(conta.id, 'credito', valor)
   res.status(201).json(lancamento)
@@ -117,4 +126,31 @@ rotasContas.get('/contas/:id/extrato', async (req, res) => {
   const { pagina, limite } = validar(esquemaPaginacao, req.query)
   const extrato = await listarExtrato(conta.id, pagina, limite)
   res.json(extrato)
+})
+
+rotasContas.patch('/contas/:id', async (req, res) => {
+  const { chave_pix } = validar(esquemaAtualizarChave, req.body)
+  const conta = await contaDoUsuario(req)
+  recusarEncerrada(conta)
+
+  try {
+    const atualizada = await atualizarChavePix(conta.id, chave_pix)
+    res.json(atualizada)
+  } catch (erro) {
+    if (erro.code === DUPLICADO) throw new ErroHttp(409, 'chave pix já cadastrada')
+    throw erro
+  }
+})
+
+rotasContas.delete('/contas/:id', async (req, res) => {
+  const conta = await contaDoUsuario(req)
+  recusarEncerrada(conta)
+  const saldo = await calcularSaldo(conta.id)
+
+  if (saldo !== 0) {
+    throw new ErroHttp(422, 'conta só pode ser encerrada com saldo zero')
+  }
+
+  const encerrada = await encerrarConta(conta.id)
+  res.json(encerrada)
 })
