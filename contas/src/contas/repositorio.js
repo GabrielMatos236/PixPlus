@@ -20,7 +20,7 @@ export async function criarConta(usuarioId, chavePix) {
 export async function buscarContaPorId(id) {
   if (!UUID.test(id)) return null
   const { rows } = await pool.query(
-    `SELECT id, usuario_id, chave_pix, criada_em FROM conta WHERE id = $1`,
+    `SELECT id, usuario_id, chave_pix, criada_em, encerrada_em FROM conta WHERE id = $1`,
     [id],
   )
   return rows[0] ?? null

@@ -52,7 +52,6 @@ describe('PATCH /contas/:id', () => {
   })
 
   it('409 — chave pix já usada por outra conta', async () => {
-    // Cria outra conta com uma chave específica
     await pool.query(
       `INSERT INTO conta (usuario_id, chave_pix)
        VALUES ($1, $2)`,
@@ -114,12 +113,6 @@ describe('DELETE /contas/:id', () => {
     token = gerarToken(usuarioId)
   })
 
-  after(async () => {
-    await pool.query('DELETE FROM lancamento')
-    await pool.query('DELETE FROM conta')
-    await pool.end()
-  })
-
   it('200 — encerra conta com saldo zero', async () => {
     const res = await request(app)
       .delete(`/contas/${contaId}`)
@@ -130,7 +123,6 @@ describe('DELETE /contas/:id', () => {
   })
 
   it('422 — recusa encerrar com saldo diferente de zero', async () => {
-    // Deposita R$ 50 pra ter saldo
     await pool.query(
       `INSERT INTO lancamento (conta_id, tipo, valor)
        VALUES ($1, 'credito', $2)`,
@@ -159,5 +151,84 @@ describe('DELETE /contas/:id', () => {
       .set('Authorization', `Bearer ${outroToken}`)
 
     assert.equal(res.status, 403)
+  })
+})
+
+describe('Conta encerrada', () => {
+  let contaId
+  let token
+  const usuarioId = crypto.randomUUID()
+
+  beforeEach(async () => {
+    await pool.query('DELETE FROM lancamento')
+    await pool.query('DELETE FROM conta')
+
+    // Cria conta e encerra ela
+    const { rows: [conta] } = await pool.query(
+      `INSERT INTO conta (usuario_id, chave_pix)
+       VALUES ($1, $2) RETURNING id`,
+      [usuarioId, 'encerrada@teste'],
+    )
+    contaId = conta.id
+    token = gerarToken(usuarioId)
+
+    // Encerra a conta
+    await pool.query(
+      `UPDATE conta SET encerrada_em = NOW() WHERE id = $1`,
+      [contaId],
+    )
+  })
+
+  after(async () => {
+    await pool.query('DELETE FROM lancamento')
+    await pool.query('DELETE FROM conta')
+    await pool.end()
+  })
+
+  it('422 — depósito em conta encerrada', async () => {
+    const res = await request(app)
+      .post(`/contas/${contaId}/depositos`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ valor: 1000 })
+
+    assert.equal(res.status, 422)
+    assert.equal(res.body.erro, 'conta encerrada')
+  })
+
+  it('422 — PATCH em conta encerrada', async () => {
+    const res = await request(app)
+      .patch(`/contas/${contaId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ chave_pix: 'outra@teste' })
+
+    assert.equal(res.status, 422)
+    assert.equal(res.body.erro, 'conta encerrada')
+  })
+
+  it('422 — segundo DELETE em conta encerrada', async () => {
+    const res = await request(app)
+      .delete(`/contas/${contaId}`)
+      .set('Authorization', `Bearer ${token}`)
+
+    assert.equal(res.status, 422)
+    assert.equal(res.body.erro, 'conta encerrada')
+  })
+
+  it('200 — saldo de conta encerrada continua acessível', async () => {
+    const res = await request(app)
+      .get(`/contas/${contaId}/saldo`)
+      .set('Authorization', `Bearer ${token}`)
+
+    assert.equal(res.status, 200)
+    assert.equal(res.body.saldo, 0)
+  })
+
+  it('200 — extrato de conta encerrada continua acessível', async () => {
+    const res = await request(app)
+      .get(`/contas/${contaId}/extrato`)
+      .set('Authorization', `Bearer ${token}`)
+
+    assert.equal(res.status, 200)
+    assert.ok(Array.isArray(res.body.lancamentos))
   })
 })

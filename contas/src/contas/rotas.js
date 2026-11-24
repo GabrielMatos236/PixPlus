@@ -37,6 +37,11 @@ async function contaDoUsuario(req) {
   return conta
 }
 
+// Barra operações em conta que já foi encerrada.
+function recusarEncerrada(conta) {
+  if (conta.encerrada_em) throw new ErroHttp(422, 'conta encerrada')
+}
+
 // ─── Rotas internas (sem JWT; o nginx bloqueia /interno) ─
 
 // ?chave=...      → conta de destino de um Pix
@@ -102,6 +107,7 @@ rotasContas.get('/contas/:id', async (req, res) => {
 rotasContas.post('/contas/:id/depositos', async (req, res) => {
   const { valor } = validar(esquemaDeposito, req.body)
   const conta = await contaDoUsuario(req)
+  recusarEncerrada(conta)
 
   const lancamento = await criarLancamento(conta.id, 'credito', valor)
   res.status(201).json(lancamento)
@@ -125,6 +131,7 @@ rotasContas.get('/contas/:id/extrato', async (req, res) => {
 rotasContas.patch('/contas/:id', async (req, res) => {
   const { chave_pix } = validar(esquemaAtualizarChave, req.body)
   const conta = await contaDoUsuario(req)
+  recusarEncerrada(conta)
 
   try {
     const atualizada = await atualizarChavePix(conta.id, chave_pix)
@@ -137,6 +144,7 @@ rotasContas.patch('/contas/:id', async (req, res) => {
 
 rotasContas.delete('/contas/:id', async (req, res) => {
   const conta = await contaDoUsuario(req)
+  recusarEncerrada(conta)
   const saldo = await calcularSaldo(conta.id)
 
   if (saldo !== 0) {
