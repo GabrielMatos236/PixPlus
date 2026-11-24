@@ -133,12 +133,32 @@ export async function verificacao() {
 // lançamentos, já vendo o débito que acabou de entrar. A versão sem lock, que
 // deixava a conta negativa, está guardada na tag v0-ingenua.
 //
+// Idempotência: se o transferencia_id já aparece na tabela lancamento, o Pix já
+// foi processado. Devolve o saldo atual da origem sem inserir de novo.
+// A UNIQUE (transferencia_id, tipo) garante no banco que duplicatas são impossíveis.
+//
 // Débito e crédito usam o MESMO cliente do pool (pool.connect). Com pool.query,
 // cada comando pode cair numa conexão diferente e o BEGIN/COMMIT não vale.
 export async function executarMovimentacao(transferenciaId, contaOrigem, contaDestino, valor) {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
+
+    // ── Idempotência: se já processou essa transferência, devolve o resultado ──
+    const { rows: jaExiste } = await client.query(
+      `SELECT 1 FROM lancamento WHERE transferencia_id = $1 LIMIT 1`,
+      [transferenciaId],
+    )
+
+    if (jaExiste.length > 0) {
+      const { rows: [{ saldo }] } = await client.query(
+        `SELECT COALESCE(SUM(CASE WHEN tipo = 'credito' THEN valor ELSE -valor END), 0) AS saldo
+         FROM lancamento WHERE conta_id = $1`,
+        [contaOrigem],
+      )
+      await client.query('COMMIT')
+      return { transferencia_id: transferenciaId, saldo_origem: parseInt(saldo, 10) }
+    }
 
     const { rows: contas } = await client.query(
       'SELECT id FROM conta WHERE id = ANY($1::uuid[])',
