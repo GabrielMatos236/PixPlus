@@ -134,8 +134,9 @@ export async function verificacao() {
 // deixava a conta negativa, está guardada na tag v0-ingenua.
 //
 // Idempotência: se o transferencia_id já aparece na tabela lancamento, o Pix já
-// foi processado. Devolve o saldo atual da origem sem inserir de novo.
-// A UNIQUE (transferencia_id, tipo) garante no banco que duplicatas são impossíveis.
+// foi processado. Devolve o saldo atual da origem sem inserir de novo. A conferência
+// é feita depois do lock da origem; a UNIQUE (transferencia_id, tipo) é a garantia
+// final no banco (migration 1793900000004).
 //
 // Débito e crédito usam o MESMO cliente do pool (pool.connect). Com pool.query,
 // cada comando pode cair numa conexão diferente e o BEGIN/COMMIT não vale.
@@ -143,22 +144,6 @@ export async function executarMovimentacao(transferenciaId, contaOrigem, contaDe
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
-
-    // ── Idempotência: se já processou essa transferência, devolve o resultado ──
-    const { rows: jaExiste } = await client.query(
-      `SELECT 1 FROM lancamento WHERE transferencia_id = $1 LIMIT 1`,
-      [transferenciaId],
-    )
-
-    if (jaExiste.length > 0) {
-      const { rows: [{ saldo }] } = await client.query(
-        `SELECT COALESCE(SUM(CASE WHEN tipo = 'credito' THEN valor ELSE -valor END), 0) AS saldo
-         FROM lancamento WHERE conta_id = $1`,
-        [contaOrigem],
-      )
-      await client.query('COMMIT')
-      return { transferencia_id: transferenciaId, saldo_origem: parseInt(saldo, 10) }
-    }
 
     const { rows: contas } = await client.query(
       'SELECT id FROM conta WHERE id = ANY($1::uuid[])',
@@ -177,6 +162,27 @@ export async function executarMovimentacao(transferenciaId, contaOrigem, contaDe
     // Funciona no READ COMMITTED padrão: o SUM abaixo é outro comando, então
     // ele já enxerga o que foi commitado enquanto este Pix esperava o lock.
     await client.query('SELECT id FROM conta WHERE id = $1 FOR NO KEY UPDATE', [contaOrigem])
+
+    // ── Idempotência: se já processou essa transferência, devolve o resultado ──
+    // Fica DEPOIS do lock, não antes. Duas chamadas com o mesmo transferencia_id
+    // (o Transferências tentando de novo depois de um timeout, enquanto a primeira
+    // ainda esperava o lock) têm a mesma conta de origem: a segunda espera aqui e,
+    // quando passa, já enxerga os lançamentos que a primeira gravou. Antes do lock,
+    // as duas olhavam ao mesmo tempo, não achavam nada e as duas debitavam.
+    const { rows: jaExiste } = await client.query(
+      `SELECT 1 FROM lancamento WHERE transferencia_id = $1 LIMIT 1`,
+      [transferenciaId],
+    )
+
+    if (jaExiste.length > 0) {
+      const { rows: [{ saldo }] } = await client.query(
+        `SELECT COALESCE(SUM(CASE WHEN tipo = 'credito' THEN valor ELSE -valor END), 0) AS saldo
+         FROM lancamento WHERE conta_id = $1`,
+        [contaOrigem],
+      )
+      await client.query('COMMIT')
+      return { transferencia_id: transferenciaId, saldo_origem: parseInt(saldo, 10) }
+    }
 
     const { rows: [{ saldo }] } = await client.query(
       `SELECT COALESCE(SUM(CASE WHEN tipo = 'credito' THEN valor ELSE -valor END), 0) AS saldo
