@@ -7,7 +7,7 @@ import { pool } from '../db.js'
 //                                    └─► falhar    → status falhou + motivo
 //
 // Se Contas estiver fora do ar, nenhum dos dois roda e ela fica pendente.
-// A rotina da etapa 3 reprocessa essas.
+// A rotina de pendentes (src/pendentes) reprocessa essas.
 
 // O Postgres recusa (com erro, que virava 500) um id que não tem formato de UUID.
 // Conferir antes deixa "GET /transferencias/abc" responder 404.
@@ -106,4 +106,26 @@ export async function buscarPorId(id) {
   if (!UUID.test(id)) return null
   const { rows } = await pool.query('SELECT * FROM transferencia WHERE id = $1', [id])
   return rows[0] ?? null
+}
+// ─── Rotina de pendentes ─────────────────────────────────────
+//
+// Pega até `lote` transferências pendentes paradas há mais de 1 minuto e
+// RESERVA cada uma: o UPDATE grava atualizada_em = agora, então nenhuma réplica
+// volta a pegá-la antes de mais 1 minuto. O FOR UPDATE SKIP LOCKED faz duas
+// réplicas rodando ao mesmo tempo pegarem lotes diferentes, sem esperar uma
+// pela outra. Nenhum lock fica preso enquanto a rotina chama Contas.
+export async function reservarPendentes(lote = 50) {
+  const { rows } = await pool.query(
+    `UPDATE transferencia SET atualizada_em = now()
+     WHERE id IN (
+       SELECT id FROM transferencia
+       WHERE status = 'pendente' AND atualizada_em < now() - interval '1 minute'
+       ORDER BY atualizada_em
+       LIMIT $1
+       FOR UPDATE SKIP LOCKED
+     )
+     RETURNING *`,
+    [lote],
+  )
+  return rows
 }

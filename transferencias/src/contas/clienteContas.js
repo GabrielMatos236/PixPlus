@@ -11,7 +11,28 @@ import { ErroHttp } from '../erros.js'
 
 const TEMPO_LIMITE_MS = 2000
 
-async function chamarContas(caminho, { method = 'GET', corpo } = {}) {
+// Etapa 3: até 3 tentativas quando Contas não responde (fora do ar, timeout, 5xx).
+// Entre uma e outra, uma espera curta que dobra: 200 ms e depois 400 ms.
+// Repetir a movimentação é seguro porque Contas não lança duas vezes o mesmo
+// transferencia_id (UNIQUE em lancamento). Pior caso: 3 x 2 s + 0,6 s.
+const TENTATIVAS = 3
+const ESPERA_INICIAL_MS = 200
+
+const esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+async function chamarContas(caminho, opcoes) {
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      return await chamarContasUmaVez(caminho, opcoes)
+    } catch (erro) {
+      const contasIndisponivel = erro instanceof ErroHttp && erro.status === 503
+      if (!contasIndisponivel || tentativa === TENTATIVAS) throw erro
+      await esperar(ESPERA_INICIAL_MS * 2 ** (tentativa - 1))
+    }
+  }
+}
+
+async function chamarContasUmaVez(caminho, { method = 'GET', corpo } = {}) {
   let resposta
   try {
     resposta = await fetch(`${config.CONTAS_URL}${caminho}`, {
@@ -61,7 +82,8 @@ export async function buscarContaPorChave(chave) {
 // Débito na origem e crédito no destino, feitos por Contas.
 // Não lança erro quando Contas recusa: devolve o motivo, porque a transferência
 // precisa ser gravada como "falhou" com esse motivo.
-// Se Contas estiver fora do ar, lança 503 e a transferência fica pendente.
+// Se Contas continuar fora do ar depois das 3 tentativas, lança 503 e a
+// transferência fica pendente (a rotina de pendentes tenta de novo depois).
 export async function movimentar({ transferenciaId, contaOrigem, contaDestino, valor }) {
   const caminho = '/interno/movimentacoes'
   const { status, dados } = await chamarContas(caminho, {
@@ -74,7 +96,10 @@ export async function movimentar({ transferenciaId, contaOrigem, contaDestino, v
     },
   })
 
-  if (status === 201) return { concluida: true }
+  // 201: movimentou agora. 200: era uma repetição e Contas devolveu o resultado
+  // original, sem lançar de novo (aceito os dois para não depender do status
+  // exato que Contas escolher para a repetição).
+  if (status === 201 || status === 200) return { concluida: true }
   if (status === 422 || status === 404) return { concluida: false, motivo: dados?.erro ?? 'recusada por contas' }
   throw respostaInesperada(caminho, status, dados)
 }
