@@ -1,0 +1,4 @@
+ eventos | total_avisos | eventos_incorretos
+---------+--------------+--------------------
+    1000 |         2000 |                  0
+(1 row)
