@@ -1,0 +1,108 @@
+{
+    "projeto":  "pixplus-etapa3",
+    "execucao":  "execucao-1",
+    "arquivo_usuarios":  "usuarios-seed-1795660214472.json",
+    "lote":  "1795660214472",
+    "revisao":  "5606845536904e3f3a84492962d467eda70da27a",
+    "alvo_nome":  "pixplus-etapa3-transferencias-4",
+    "alvo_id":  "0d7dc0ffc4153a66d35d930a731f0e6c4f77b71b26b73e4d4be544626f83d4b0",
+    "replicas_iniciais":  [
+                              {
+                                  "servico":  "contas",
+                                  "nome":  "pixplus-etapa3-contas-1",
+                                  "id":  "fc870e1a1621536db61037949733d536914d29a6c02458c524f2f087bfffeed7",
+                                  "imagem":  "sha256:a0bd6f7b6ecccecfd63663b9260235eb55cb8a81834db1effbadf61a371c9478",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "contas",
+                                  "nome":  "pixplus-etapa3-contas-2",
+                                  "id":  "d801607af230022eb9c961facfbce0daa37cca91d2e5bd7f5e2134b9d8e898e9",
+                                  "imagem":  "sha256:a0bd6f7b6ecccecfd63663b9260235eb55cb8a81834db1effbadf61a371c9478",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "contas",
+                                  "nome":  "pixplus-etapa3-contas-3",
+                                  "id":  "286cf727fb41701aed81d722d26e69b81bd9652f89e645a728e2b71771401bb9",
+                                  "imagem":  "sha256:a0bd6f7b6ecccecfd63663b9260235eb55cb8a81834db1effbadf61a371c9478",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "contas",
+                                  "nome":  "pixplus-etapa3-contas-4",
+                                  "id":  "a9cd220d85335b732f553ddf1d16c0d4e57bfc21195a3bcda622941da1224168",
+                                  "imagem":  "sha256:a0bd6f7b6ecccecfd63663b9260235eb55cb8a81834db1effbadf61a371c9478",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "transferencias",
+                                  "nome":  "pixplus-etapa3-transferencias-1",
+                                  "id":  "c90e855b71ce1b63d74e7ec11b567329f8087704e9a49668f4ee6cb0830922aa",
+                                  "imagem":  "sha256:400d516686ca429885b9b96bb02efd33a4f0dde48f60a105cfb5ea6d01d264d0",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "transferencias",
+                                  "nome":  "pixplus-etapa3-transferencias-2",
+                                  "id":  "471f0efddef66542e9bb262193595095682e7a5d0d448d777d3f019ed1724c13",
+                                  "imagem":  "sha256:400d516686ca429885b9b96bb02efd33a4f0dde48f60a105cfb5ea6d01d264d0",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "transferencias",
+                                  "nome":  "pixplus-etapa3-transferencias-3",
+                                  "id":  "b142a0226819bafe14deea679a2dacb41adef02526416d98b6d0aae41f254df7",
+                                  "imagem":  "sha256:400d516686ca429885b9b96bb02efd33a4f0dde48f60a105cfb5ea6d01d264d0",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "transferencias",
+                                  "nome":  "pixplus-etapa3-transferencias-4",
+                                  "id":  "0d7dc0ffc4153a66d35d930a731f0e6c4f77b71b26b73e4d4be544626f83d4b0",
+                                  "imagem":  "sha256:400d516686ca429885b9b96bb02efd33a4f0dde48f60a105cfb5ea6d01d264d0",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "worker-outbox",
+                                  "nome":  "pixplus-etapa3-worker-outbox-1",
+                                  "id":  "be5f467fc9f8db03969f3a5662f3327bffd82eed0a6e0c1a172715eb5744ca74",
+                                  "imagem":  "sha256:9441313d0b0168cd628796b97668be30f8388b41503ab51589f9185486489124",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "worker-outbox",
+                                  "nome":  "pixplus-etapa3-worker-outbox-2",
+                                  "id":  "4414e2172c23ca4e2957d71cedbd3bd37dc12d53b56c4d9a0999bc33ed3c32b3",
+                                  "imagem":  "sha256:9441313d0b0168cd628796b97668be30f8388b41503ab51589f9185486489124",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "worker-outbox",
+                                  "nome":  "pixplus-etapa3-worker-outbox-3",
+                                  "id":  "384429f13c9602e4365bce5e282410aea06d70bed1a14a5e09ebd6466b71d08b",
+                                  "imagem":  "sha256:9441313d0b0168cd628796b97668be30f8388b41503ab51589f9185486489124",
+                                  "pool":  10
+                              },
+                              {
+                                  "servico":  "worker-outbox",
+                                  "nome":  "pixplus-etapa3-worker-outbox-4",
+                                  "id":  "51d3261d0f97ee44396ad6e5f9ef2c2a60f2eaa258097289a8ae2436c5248c6b",
+                                  "imagem":  "sha256:9441313d0b0168cd628796b97668be30f8388b41503ab51589f9185486489124",
+                                  "pool":  10
+                              }
+                          ],
+    "vus":  500,
+    "duracao_configurada_segundos":  60,
+    "atraso_apos_primeira_transferencia_segundos":  30,
+    "queda_confirmada":  true,
+    "restauracao_confirmada":  true,
+    "inicio_comando_carga_utc":  "2026-11-26T03:14:20.0292442Z",
+    "primeira_transferencia_observada_utc":  "2026-11-26T03:14:22.9387356Z",
+    "queda_solicitada_utc":  "2026-11-26T03:14:53.0993806Z",
+    "container_finalizado_utc":  "2026-11-26T03:14:53.440284751Z",
+    "codigo_saida_container":  137,
+    "codigo_k6":  99,
+    "fim_comando_carga_utc":  "2026-11-26T03:15:28.7243981Z",
+    "restauracao_verificada_utc":  "2026-11-26T03:15:35.7336217Z"
+}

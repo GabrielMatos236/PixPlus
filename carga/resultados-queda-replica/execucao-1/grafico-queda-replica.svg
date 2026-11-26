@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="1100" height="590" preserveAspectRatio="xMinYMin meet" viewBox="0 0 1100 590" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="1100" height="590"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-590)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="0" width="1100" height="590" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
+			<text x="55" y="545" style="font-family: Helvetica-Bold; font-size: 25px;fill: rgb(9%,20%,29%); stroke:none;" transform="translate(0,1090) scale(1,-1)">Queda de uma réplica durante a carga</text>
+			<text x="55" y="518" style="font-family: Helvetica; font-size: 13px;fill: rgb(32%,39%,45%); stroke:none;" transform="translate(0,1036) scale(1,-1)">500 usuários virtuais | 10.000 contas | 60 segundos | pool de 10 por processo</text>
+			<text x="80" y="470" style="font-family: Helvetica-Bold; font-size: 17px;fill: rgb(9%,20%,29%); stroke:none;" transform="translate(0,940) scale(1,-1)">Pix confirmados ao cliente</text>
+			<text x="80" y="446" style="font-family: Helvetica; font-size: 11px;fill: rgb(32%,39%,45%); stroke:none;" transform="translate(0,892) scale(1,-1)">Pix por segundo</text>
+			<g transform="">
+				<path d="M 80,150 L 470,150 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<path d="M 80,207.777778 L 470,207.777778 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<path d="M 80,265.555556 L 470,265.555556 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<path d="M 80,323.333333 L 470,323.333333 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<path d="M 80,381.111111 L 470,381.111111 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<g transform="">
+					<rect x="158.0" y="150.0" width="39.0" height="217.1192347541034" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(5%,46%,43%); fill-rule: evenodd;"/>
+					<rect x="353.0" y="150.0" width="39.0" height="188.23427767813587" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(67%,30%,21%); fill-rule: evenodd;"/>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,177.5,375.119235)">
+							<text x="-18.348000000000003" y="-4.800000000000001" style="font-family: Helvetica-Bold; font-size: 12px;fill: rgb(9%,20%,29%); stroke:none;" transform="translate(0,-9) scale(1,-1)">375,78</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,372.5,346.234278)">
+							<text x="-18.348000000000003" y="-4.800000000000001" style="font-family: Helvetica-Bold; font-size: 12px;fill: rgb(9%,20%,29%); stroke:none;" transform="translate(0,-9) scale(1,-1)">325,79</text>
+						</g>
+					</g>
+				</g>
+				<g transform="">
+					<g transform="">
+						<path d="M 80,150 L 470,150 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<path d="M 80,150 L 80,145 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 275,150 L 275,145 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 470,150 L 470,145 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,177.5,145)">
+							<text x="-30.683999999999997" y="-12.0" style="font-family: Helvetica; font-size: 12px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-24) scale(1,-1)">Sem queda</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,372.5,145)">
+							<text x="-31.014000000000003" y="-12.0" style="font-family: Helvetica; font-size: 12px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-24) scale(1,-1)">Com queda</text>
+						</g>
+					</g>
+				</g>
+				<g transform="">
+					<g transform="">
+						<path d="M 80,150 L 80,410 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<path d="M 80,150 L 75,150 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 80,207.777778 L 75,207.777778 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 80,265.555556 L 75,265.555556 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 80,323.333333 L 75,323.333333 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 80,381.111111 L 75,381.111111 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,75,150)">
+							<text x="-5.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">0</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,75,207.777778)">
+							<text x="-15.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">100</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,75,265.555556)">
+							<text x="-15.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">200</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,75,323.333333)">
+							<text x="-15.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">300</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,75,381.111111)">
+							<text x="-15.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">400</text>
+						</g>
+					</g>
+				</g>
+			</g>
+			<text x="630" y="470" style="font-family: Helvetica-Bold; font-size: 17px;fill: rgb(9%,20%,29%); stroke:none;" transform="translate(0,940) scale(1,-1)">Falhas observadas pelo cliente</text>
+			<text x="630" y="446" style="font-family: Helvetica; font-size: 11px;fill: rgb(32%,39%,45%); stroke:none;" transform="translate(0,892) scale(1,-1)">Percentual das operações de Pix</text>
+			<g transform="">
+				<path d="M 630,150 L 1020,150 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<path d="M 630,202 L 1020,202 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<path d="M 630,254 L 1020,254 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<path d="M 630,306 L 1020,306 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<path d="M 630,358 L 1020,358 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<path d="M 630,410 L 1020,410 Z" style="stroke: rgb(88%,90%,92%); stroke-linecap: butt; stroke-width: 0.5;"/>
+				<g transform="">
+					<rect x="903.0" y="150.0" width="39.0" height="176.40856370054553" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(67%,30%,21%); fill-rule: evenodd;"/>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,727.5,158)">
+							<text x="-17.009999999999998" y="-4.800000000000001" style="font-family: Helvetica-Bold; font-size: 12px;fill: rgb(9%,20%,29%); stroke:none;" transform="translate(0,-9) scale(1,-1)">0,00%</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,922.5,334.408564)">
+							<text x="-17.009999999999998" y="-4.800000000000001" style="font-family: Helvetica-Bold; font-size: 12px;fill: rgb(9%,20%,29%); stroke:none;" transform="translate(0,-9) scale(1,-1)">1,70%</text>
+						</g>
+					</g>
+				</g>
+				<g transform="">
+					<g transform="">
+						<path d="M 630,150 L 1020,150 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<path d="M 630,150 L 630,145 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 825,150 L 825,145 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 1020,150 L 1020,145 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,727.5,145)">
+							<text x="-30.683999999999997" y="-12.0" style="font-family: Helvetica; font-size: 12px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-24) scale(1,-1)">Sem queda</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,922.5,145)">
+							<text x="-31.014000000000003" y="-12.0" style="font-family: Helvetica; font-size: 12px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-24) scale(1,-1)">Com queda</text>
+						</g>
+					</g>
+				</g>
+				<g transform="">
+					<g transform="">
+						<path d="M 630,150 L 630,410 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<path d="M 630,150 L 625,150 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 630,202 L 625,202 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 630,254 L 625,254 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 630,306 L 625,306 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 630,358 L 625,358 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+						<path d="M 630,410 L 625,410 Z" style="stroke: rgb(0%,0%,0%); stroke-linecap: butt; stroke-width: 1;"/>
+					</g>
+					<g transform="">
+						<g transform=" matrix(1,0,0,1,625,150)">
+							<text x="-5.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">0</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,625,202)">
+							<text x="-12.5" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">0.5</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,625,254)">
+							<text x="-5.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">1</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,625,306)">
+							<text x="-12.5" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">1.5</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,625,358)">
+							<text x="-5.0" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">2</text>
+						</g>
+						<g transform=" matrix(1,0,0,1,625,410)">
+							<text x="-12.5" y="-4.0" style="font-family: Times-Roman; font-size: 10px;fill: rgb(0%,0%,0%); stroke:none;" transform="translate(0,-8) scale(1,-1)">2.5</text>
+						</g>
+					</g>
+				</g>
+			</g>
+			<text x="55" y="87" style="font-family: Helvetica; font-size: 10px;fill: rgb(32%,39%,45%); stroke:none;" transform="translate(0,174) scale(1,-1)">Teste com queda: Transferências passou de 4 para 3 réplicas; Contas e worker permaneceram com 4.</text>
+			<text x="55" y="68" style="font-family: Helvetica; font-size: 10px;fill: rgb(32%,39%,45%); stroke:none;" transform="translate(0,136) scale(1,-1)">Queda solicitada 30 s após observar a primeira transferência. A réplica foi restaurada depois da carga.</text>
+			<text x="55" y="49" style="font-family: Helvetica; font-size: 10px;fill: rgb(32%,39%,45%); stroke:none;" transform="translate(0,98) scale(1,-1)">Uma execução por condição, na mesma máquina. Timeout não implica ausência de movimentação no banco.</text>
+		</g>
+	</g>
+</svg>
