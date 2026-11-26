@@ -66,3 +66,26 @@ Evidências:
 - carga/execucao-queda-notificacoes.log, mantido localmente
 
 O serviço foi religado no bloco finally ao término da carga.
+
+## Duas réplicas com 10000 eventos
+
+- Ambiente isolado: pixplus-etapa3.
+- Fila inicialmente sem eventos pendentes ou em erro.
+- Inseridos 10000 eventos fictícios de um lote exclusivo.
+- Nenhuma movimentação financeira foi executada neste cenário.
+
+Divisão observada nos logs:
+- Réplica 1: 103 lotes, 5150 eventos processados, zero falhas.
+- Réplica 2: 97 lotes, 4850 eventos processados, zero falhas.
+
+Auditoria dos eventos processados:
+- 10000 eventos.
+- 20000 avisos.
+- Zero eventos incorretos.
+- Cada evento gerou exatamente um aviso para a origem e um para o destino.
+
+Evidências:
+- carga/eventos-workers.sql
+- carga/lote-workers-10000.json
+- carga/logs-workers-10000.txt
+- carga/auditoria-workers-10000.txt

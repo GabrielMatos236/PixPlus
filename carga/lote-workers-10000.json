@@ -1,0 +1,10 @@
+{
+    "lote":  "e3d3ee25-3f14-477f-ba32-9054a64b692e",
+    "usuario_origem":  "774e98d8-24d5-4a7a-aee1-ae629243a316",
+    "usuario_destino":  "578e07bb-552d-4531-b038-0a61aa678914",
+    "eventos_esperados":  10000,
+    "avisos_esperados":  20000,
+    "projeto":  "pixplus-etapa3",
+    "preparado_em":  "2026-11-26T02:13:00.8082883Z",
+    "inicio_execucao":  "2026-11-26T02:13:55.0351298Z"
+}
