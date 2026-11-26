@@ -11,7 +11,7 @@ export async function criarConta(usuarioId, chavePix) {
   const { rows } = await pool.query(
     `INSERT INTO conta (usuario_id, chave_pix)
      VALUES ($1, $2)
-     RETURNING id, usuario_id, chave_pix, criada_em`,
+     RETURNING id, usuario_id, chave_pix, criada_em, encerrada_em`,
     [usuarioId, chavePix],
   )
   return rows[0]
@@ -29,7 +29,7 @@ export async function buscarContaPorId(id) {
 // Cada usuário tem no máximo uma conta (UNIQUE no banco).
 export async function buscarContaPorUsuario(usuarioId) {
   const { rows } = await pool.query(
-    `SELECT id, usuario_id, chave_pix, criada_em FROM conta
+    `SELECT id, usuario_id, chave_pix, criada_em, encerrada_em FROM conta
      WHERE usuario_id = $1 AND encerrada_em IS NULL`,
     [usuarioId],
   )
@@ -213,7 +213,7 @@ export async function executarMovimentacao(transferenciaId, contaOrigem, contaDe
 export async function atualizarChavePix(contaId, novaChave) {
   const { rows } = await pool.query(
     `UPDATE conta SET chave_pix = $1 WHERE id = $2
-     RETURNING id, usuario_id, chave_pix, criada_em`,
+     RETURNING id, usuario_id, chave_pix, criada_em, encerrada_em`,
     [novaChave, contaId],
   )
   return rows[0]
