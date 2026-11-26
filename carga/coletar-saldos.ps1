@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('antes', 'depois', 'conferencia')]
+    [ValidateSet('antes', 'depois', 'conferencia', 'etapa3-antes', 'etapa3-depois')]
     [string]$Etapa = 'conferencia'
 )
 
