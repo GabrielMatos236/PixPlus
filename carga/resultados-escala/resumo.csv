@@ -1,0 +1,4 @@
+replicas,pix_concluidos,pix_por_segundo,p95_ms,taxa_falhas_http,checks_reprovados,saldo_insuficiente,respostas_inesperadas,soma_antes_centavos,soma_depois_centavos,negativas_antes,negativas_depois
+1,13826,223.40106597397917,2735.3241642499997,0,0,0,0,100460000,100460000,0,0
+2,21002,339.8727230660842,2615.98321395,0,0,0,0,100460000,100460000,0,0
+4,22922,375.7832909205636,3112.19708905,0,0,0,0,100460000,100460000,0,0

@@ -83,42 +83,51 @@ await writeFile(
 
 console.log(`Arquivo de dados: carga/${nomeArquivo}`)
 
-for (let indice = 0; indice < quantidade; indice++) {
-  const email = `seed.${lote}.${indice}@teste.example`
-  const senha = 'SenhaSeed123!'
-  const numeroCpf = 800000000 + ((lote + indice) % 10000000)
+try {
+  for (let indice = 0; indice < quantidade; indice++) {
+    const email = `seed.${lote}.${indice}@teste.example`
+    const senha = 'SenhaSeed123!'
+    const numeroCpf = 800000000 + ((lote + indice) % 10000000)
 
-  const usuario = await chamarApi('/auth/cadastro', {
-    nome: `Usuario Seed ${indice}`,
-    email,
-    cpf: gerarCpf(numeroCpf),
-    senha,
-  }, 201)
+    const usuario = await chamarApi('/auth/cadastro', {
+      nome: `Usuario Seed ${indice}`,
+      email,
+      cpf: gerarCpf(numeroCpf),
+      senha,
+    }, 201)
 
-  const login = await chamarApi('/auth/login', {
-    email,
-    senha,
-  }, 200)
+    const login = await chamarApi('/auth/login', {
+      email,
+      senha,
+    }, 200)
 
-  const conta = await chamarApi('/contas/', {
-    chave_pix: email,
-  }, 201, login.token)
+    const conta = await chamarApi('/contas/', {
+      chave_pix: email,
+    }, 201, login.token)
 
-  await chamarApi(`/contas/${conta.id}/depositos`, {
-    valor: deposito,
-  }, 201, login.token)
+    await chamarApi(`/contas/${conta.id}/depositos`, {
+      valor: deposito,
+    }, 201, login.token)
 
-  usuarios.push({
-    usuario_id: usuario.id,
-    conta_id: conta.id,
-    chave_pix: conta.chave_pix,
-    email,
-    senha,
-  })
+    usuarios.push({
+      usuario_id: usuario.id,
+      conta_id: conta.id,
+      chave_pix: conta.chave_pix,
+      email,
+      senha,
+      token: login.token,
+    })
 
+    if ((indice + 1) % 100 === 0 || indice + 1 === quantidade) {
+      await salvarUsuarios()
+
+      console.log(
+        `${indice + 1}/${quantidade}: conta criada e depósito realizado`,
+      )
+    }
+  }
+} finally {
   await salvarUsuarios()
-
-  console.log(`${indice + 1}/${quantidade}: conta criada e depósito realizado`)
 }
 
 console.log(`Seed concluído: ${usuarios.length} usuários com conta e depósito.`)

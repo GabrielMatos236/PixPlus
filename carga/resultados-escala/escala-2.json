@@ -1,0 +1,165 @@
+{
+    "root_group": {
+        "checks": {
+            "Pix de escala concluído corretamente": {
+                "name": "Pix de escala concluído corretamente",
+                "path": "::Pix de escala concluído corretamente",
+                "id": "3710be99b47f9ec0eeed1cc3c3305939",
+                "passes": 21002,
+                "fails": 0
+            }
+        },
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {}
+    },
+    "metrics": {
+        "data_sent": {
+            "count": 9720531,
+            "rate": 157306.1299218306
+        },
+        "http_reqs{operacao:pix_escala}": {
+            "rate": 339.8727230660842,
+            "count": 21002,
+            "thresholds": {
+                "count>0": false
+            }
+        },
+        "escala_saldo_insuficiente": {
+            "count": 0,
+            "rate": 0
+        },
+        "escala_respostas_inesperadas": {
+            "count": 0,
+            "rate": 0
+        },
+        "http_req_connecting": {
+            "max": 82.540835,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.4682493003713575,
+            "min": 0,
+            "med": 0
+        },
+        "iteration_duration": {
+            "p(90)": 2625.8962605,
+            "p(95)": 2717.24858985,
+            "avg": 1449.60603467646,
+            "min": 118.278148,
+            "med": 1945.9810029999999,
+            "max": 3506.035573
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 21004,
+            "value": 0
+        },
+        "http_req_blocked": {
+            "avg": 0.49682157731858756,
+            "min": 0.0024,
+            "med": 0.0074,
+            "max": 106.850412,
+            "p(90)": 0.010901,
+            "p(95)": 0.016301
+        },
+        "vus_max": {
+            "value": 500,
+            "min": 500,
+            "max": 500
+        },
+        "http_req_tls_handshaking": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0
+        },
+        "checks": {
+            "passes": 21002,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "http_req_sending": {
+            "p(90)": 0.068803,
+            "p(95)": 0.11189014999999986,
+            "avg": 0.13023815511331205,
+            "min": 0.008201,
+            "med": 0.031901,
+            "max": 67.660254
+        },
+        "http_req_waiting": {
+            "avg": 1347.4355715345202,
+            "min": 7.812011,
+            "med": 1843.1493595000002,
+            "max": 3328.176458,
+            "p(90)": 2524.4267936,
+            "p(95)": 2615.7716227
+        },
+        "data_received": {
+            "count": 9783471,
+            "rate": 158324.68002133444
+        },
+        "vus": {
+            "max": 500,
+            "value": 289,
+            "min": 289
+        },
+        "http_req_receiving": {
+            "med": 0.104406,
+            "max": 9.607613,
+            "p(90)": 0.19188030000000006,
+            "p(95)": 0.30847099999999955,
+            "avg": 0.13539456908207903,
+            "min": 0.0183
+        },
+        "http_req_failed{operacao:pix_escala}": {
+            "passes": 0,
+            "fails": 21002,
+            "thresholds": {
+                "rate==0": false
+            },
+            "value": 0
+        },
+        "http_req_duration{expected_response:true}": {
+            "min": 8.162129,
+            "med": 1843.4515755,
+            "max": 3328.334666,
+            "p(90)": 2524.7026765,
+            "p(95)": 2615.98214385,
+            "avg": 1347.7012042587096
+        },
+        "escala_tempo_pix": {
+            "p(90)": 2524.7247455,
+            "p(95)": 2615.98321395,
+            "avg": 1347.8285444741423,
+            "min": 17.635817,
+            "med": 1844.353017,
+            "max": 3328.334666
+        },
+        "escala_pix_concluidos": {
+            "count": 21002,
+            "rate": 339.8727230660842
+        },
+        "http_reqs": {
+            "count": 21004,
+            "rate": 339.9050888144002
+        },
+        "http_req_duration": {
+            "med": 1843.4515755,
+            "max": 3328.334666,
+            "p(90)": 2524.7026765,
+            "p(95)": 2615.98214385,
+            "avg": 1347.7012042587096,
+            "min": 8.162129
+        },
+        "iterations": {
+            "count": 21002,
+            "rate": 339.8727230660842
+        }
+    }
+}

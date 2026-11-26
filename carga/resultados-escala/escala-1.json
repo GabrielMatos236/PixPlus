@@ -1,0 +1,165 @@
+{
+    "metrics": {
+        "data_received": {
+            "count": 6440775,
+            "rate": 104070.30237947025
+        },
+        "escala_saldo_insuficiente": {
+            "count": 0,
+            "rate": 0
+        },
+        "http_req_connecting": {
+            "med": 0,
+            "max": 48.494958,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.43135507260630607,
+            "min": 0
+        },
+        "iteration_duration": {
+            "min": 313.111963,
+            "med": 2063.4019369999996,
+            "max": 5304.498385,
+            "p(90)": 2627.374131,
+            "p(95)": 2838.36457075,
+            "avg": 2202.9343294119094
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 13828,
+            "value": 0
+        },
+        "http_req_receiving": {
+            "p(95)": 0.176209,
+            "avg": 0.12270851417413939,
+            "min": 0.019201,
+            "med": 0.121206,
+            "max": 4.550334,
+            "p(90)": 0.1602083
+        },
+        "escala_respostas_inesperadas": {
+            "rate": 0,
+            "count": 0
+        },
+        "http_req_failed{operacao:pix_escala}": {
+            "passes": 0,
+            "fails": 13826,
+            "thresholds": {
+                "rate==0": false
+            },
+            "value": 0
+        },
+        "http_req_blocked": {
+            "med": 0.0073,
+            "max": 61.147951,
+            "p(90)": 0.010501,
+            "p(95)": 0.017365999999999965,
+            "avg": 0.44688665425226015,
+            "min": 0.003
+        },
+        "http_reqs": {
+            "count": 13828,
+            "rate": 223.43338205469288
+        },
+        "http_req_tls_handshaking": {
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0
+        },
+        "vus_max": {
+            "value": 500,
+            "min": 500,
+            "max": 500
+        },
+        "checks": {
+            "fails": 0,
+            "passes": 13826,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "http_req_duration{expected_response:true}": {
+            "med": 1962.3690745,
+            "max": 5198.21477,
+            "p(90)": 2526.4310749,
+            "p(95)": 2735.1383415499995,
+            "avg": 2101.0938754156837,
+            "min": 3.353084
+        },
+        "vus": {
+            "value": 273,
+            "min": 273,
+            "max": 500
+        },
+        "http_reqs{operacao:pix_escala}": {
+            "count": 13826,
+            "rate": 223.40106597397917,
+            "thresholds": {
+                "count>0": false
+            }
+        },
+        "http_req_waiting": {
+            "max": 5198.078263,
+            "p(90)": 2526.2623262,
+            "p(95)": 2734.9925534999993,
+            "avg": 2100.906731975421,
+            "min": 3.134272,
+            "med": 1962.202515
+        },
+        "data_sent": {
+            "rate": 103401.13329613114,
+            "count": 6399361
+        },
+        "escala_pix_concluidos": {
+            "count": 13826,
+            "rate": 223.40106597397917
+        },
+        "iterations": {
+            "count": 13826,
+            "rate": 223.40106597397917
+        },
+        "http_req_sending": {
+            "max": 7.775326,
+            "p(90)": 0.066703,
+            "p(95)": 0.089505,
+            "avg": 0.06443492609198707,
+            "min": 0.008501,
+            "med": 0.049203
+        },
+        "escala_tempo_pix": {
+            "max": 5198.21477,
+            "p(90)": 2526.4448595,
+            "p(95)": 2735.3241642499997,
+            "avg": 2101.3971630159176,
+            "min": 167.722794,
+            "med": 1962.416725
+        },
+        "http_req_duration": {
+            "p(90)": 2526.4310749,
+            "p(95)": 2735.1383415499995,
+            "avg": 2101.0938754156837,
+            "min": 3.353084,
+            "med": 1962.3690745,
+            "max": 5198.21477
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "Pix de escala concluído corretamente": {
+                    "passes": 13826,
+                    "fails": 0,
+                    "name": "Pix de escala concluído corretamente",
+                    "path": "::Pix de escala concluído corretamente",
+                    "id": "3710be99b47f9ec0eeed1cc3c3305939"
+                }
+            }
+    }
+}
