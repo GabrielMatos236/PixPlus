@@ -1,0 +1,10 @@
+{
+  "transferencias_concluidas_banco": 21486,
+  "criadas_durante_a_queda": 10034,
+  "criadas_e_concluidas_durante_a_queda": 10034,
+  "transferencias_auditadas": 21486,
+  "transferencias_incorretas": 0,
+  "origem_evidencia": "Resultados das consultas manuais executadas pelo usuário e fornecidas no chat",
+  "consulta_transferencias": "carga/auditar-queda-replica-transferencias.sql",
+  "consulta_lancamentos": "carga/auditar-queda-replica-lancamentos.sql"
+}
