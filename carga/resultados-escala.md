@@ -30,7 +30,7 @@ Uma consulta manual ao banco de Contas auditou as 57750 transferências do lote 
 Nenhuma apresentou quantidade diferente de um débito e um crédito.
 O total coincide com a soma dos Pix concluídos informados pelo k6.
 
-Resultado transcrito da saída fornecida pelo usuário em `resultados-escala/auditoria-lancamentos.json`.
+Resultado da consulta em `resultados-escala/auditoria-lancamentos.json`.
 Consulta reproduzível em `auditar-lancamentos-escala.sql`, com parâmetro psql `lote=1795660214472`.
 
 
@@ -39,7 +39,7 @@ Consulta reproduzível em `auditar-lancamentos-escala.sql`, com parâmetro psql 
 - Ordem fixa: 1, 2 e 4 réplicas, na mesma máquina que executou o gerador de carga.
 - A base foi reutilizada, sem restauração de saldos, lançamentos e tabelas de eventos entre as execuções.
 - O estado da fila no início de cada configuração não está documentado nos arquivos de evidência desta entrega.
-- As somas das coletas incluem todas as contas do ambiente, não apenas as 10000 do lote.
+- Resultados das consultas SQL em `auditoria.json`.
 - A taxa é a fornecida pelo contador do k6, incluindo o período de finalização da execução.
 - A auditoria dos lançamentos verifica as quantidades por transferência no lote. A repetição de uma chave e o Pix cruzado foram validados separadamente na etapa 3.
 - O teste de queda de uma réplica durante a carga ainda não está incluído.

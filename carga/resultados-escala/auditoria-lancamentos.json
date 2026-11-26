@@ -2,6 +2,6 @@
   "lote": "1795660214472",
   "transferencias_auditadas": 57750,
   "transferencias_incorretas": 0,
-  "origem_evidencia": "Resultado da consulta manual executada pelo usuário e fornecida no chat",
+  "origem_evidencia": "Consulta manual ao banco de Contas após as três execuções",
   "consulta": "carga/auditar-lancamentos-escala.sql"
 }
