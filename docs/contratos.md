@@ -71,8 +71,9 @@ Formato de erro de todos os endpoints: `{ "erro": "mensagem" }`. Erros de valida
 Formato de erro igual ao do Auth: `{ "erro": "mensagem" }`, e erros de validação trazem `"detalhes"`.
 Rotas com autenticação usam `Authorization: Bearer <token>` e respondem 401 (`token ausente`, `token inválido` ou `token expirado`).
 Valores sempre em centavos (inteiro).
-Cada usuário tem **no máximo uma conta**. A chave pix é gravada e buscada sem espaços nas pontas e em minúsculas (`" Maria@Pix "` vira `maria@pix`).
+Cada usuário tem **no máximo uma conta ativa**. Quem encerra a conta pode abrir outra; a encerrada continua com saldo e extrato acessíveis, mas não aceita depósito, troca de chave nem Pix. A chave pix é gravada e buscada sem espaços nas pontas e em minúsculas (`" Maria@Pix "` vira `maria@pix`), e só precisa ser única entre as contas ativas: a chave de uma conta encerrada pode ser usada de novo.
 Id de conta que não é UUID responde como conta inexistente (404).
+Toda resposta com uma conta traz `encerrada_em`: `null` enquanto a conta está ativa, a data ISO depois de encerrada.
 
 ### GET /contas/saude
 - Autenticação: não
@@ -81,31 +82,53 @@ Id de conta que não é UUID responde como conta inexistente (404).
 ### POST /contas
 - Autenticação: sim
 - Corpo: `{ "chave_pix": "string" }` (1 a 140 caracteres, depois de normalizada)
-- Resposta 201: `{ "id": "uuid", "usuario_id": "uuid", "chave_pix": "string", "criada_em": "data ISO" }`
-- Erros: 400 (dados inválidos), 401, 409 (`chave pix já cadastrada` ou `você já tem uma conta`)
+- Resposta 201: `{ "id": "uuid", "usuario_id": "uuid", "chave_pix": "string", "criada_em": "data ISO", "encerrada_em": null }`
+- Erros: 400 (dados inválidos), 401, 409 (`chave pix já cadastrada`, se outra conta ativa usa a chave, ou `você já tem uma conta`, se o usuário já tem uma conta ativa)
 
 ### GET /contas/minha
 - Autenticação: sim
-- A conta de quem está logado. É por ela que o front descobre o id da conta.
-- Resposta 200: `{ "id": "uuid", "usuario_id": "uuid", "chave_pix": "string", "criada_em": "data ISO" }`
-- Erros: 401, 404 (`você ainda não tem conta`)
+- A conta ativa de quem está logado. É por ela que o front descobre o id da conta.
+- Resposta 200: `{ "id": "uuid", "usuario_id": "uuid", "chave_pix": "string", "criada_em": "data ISO", "encerrada_em": null }`
+- Erros: 401, 404 (`você ainda não tem conta`, também depois de encerrar a conta e antes de abrir outra)
 
 ### GET /contas/{id}
 - Autenticação: sim
-- Resposta 200: `{ "id": "uuid", "usuario_id": "uuid", "chave_pix": "string", "criada_em": "data ISO" }`
+- Funciona também para conta encerrada (o usuário continua vendo as contas antigas dele)
+- Resposta 200: `{ "id": "uuid", "usuario_id": "uuid", "chave_pix": "string", "criada_em": "data ISO", "encerrada_em": "data ISO" ou null }`
 - Erros: 401, 403 (conta de outro usuário), 404 (conta não encontrada)
 
 ### POST /contas/{id}/depositos
 - Autenticação: sim
 - Corpo: `{ "valor": 1000 }` (inteiro maior que zero, no máximo 100000000 = R$ 1.000.000,00)
 - Resposta 201: `{ "id": "uuid", "conta_id": "uuid", "tipo": "credito", "valor": 1000, "transferencia_id": null, "criado_em": "data ISO" }`
-- Erros: 400, 401, 403, 404
+- Erros: 400, 401, 403, 404, 422 (`conta encerrada`)
 
 ### GET /contas/{id}/saldo
 - Autenticação: sim
+- Funciona também para conta encerrada
 - Resposta 200: `{ "conta_id": "uuid", "saldo": 1000 }` (soma dos créditos menos soma dos débitos)
 - Erros: 401, 403, 404
 
+### GET /contas/{id}/extrato?pagina=1&limite=20
+- Autenticação: sim
+- Funciona também para conta encerrada
+- `pagina` a partir de 1 (padrão 1); `limite` de 1 a 100 (padrão 20)
+- Resposta 200: `{ "lancamentos": [{ "id", "tipo", "valor", "transferencia_id", "criado_em" }], "total": 0, "pagina": 1, "limite": 20, "paginas": 0 }`, do mais novo para o mais antigo
+- Erros: 400, 401, 403, 404
+
+### PATCH /contas/{id}
+- Autenticação: sim
+- Troca a chave pix da conta. A chave nova passa pela mesma normalização do cadastro
+- Corpo: `{ "chave_pix": "string" }` (1 a 140 caracteres, depois de normalizada)
+- Resposta 200: `{ "id": "uuid", "usuario_id": "uuid", "chave_pix": "string", "criada_em": "data ISO", "encerrada_em": null }`
+- Erros: 400 (dados inválidos), 401, 403, 404, 409 (`chave pix já cadastrada`), 422 (`conta encerrada`)
+
+### DELETE /contas/{id}
+- Autenticação: sim
+- Encerra a conta. Nada é apagado: a conta ganha `encerrada_em` e os lançamentos continuam no extrato. Depois disso ela não aparece mais em `GET /contas/minha`, não recebe Pix (a chave deixa de ser encontrada) e o usuário pode abrir outra conta
+- Só encerra com saldo zero
+- Resposta 200: `{ "id": "uuid", "usuario_id": "uuid", "chave_pix": "string", "criada_em": "data ISO", "encerrada_em": "data ISO" }`
+- Erros: 401, 403, 404, 422 (`conta só pode ser encerrada com saldo zero` ou `conta encerrada`, se ela já estava encerrada)
 ### GET /contas/{id}/extrato?pagina=1&limite=20
 - Autenticação: sim
 - `pagina` a partir de 1 (padrão 1); `limite` de 1 a 100 (padrão 20)
