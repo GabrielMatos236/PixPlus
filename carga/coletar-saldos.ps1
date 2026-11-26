@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('antes', 'depois', 'conferencia', 'etapa3-antes', 'etapa3-depois')]
+    [ValidatePattern('^[a-z0-9]+(?:-[a-z0-9]+)*$')]
     [string]$Etapa = 'conferencia'
 )
 
