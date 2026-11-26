@@ -137,3 +137,67 @@ test('id que não é UUID devolve 404 (antes dava 500)', async () => {
   assert.equal(resposta.status, 404)
   assert.equal(resposta.body.erro, 'conta não encontrada')
 })
+
+
+// ─── Encerrar e abrir outra conta ────────────────────────────
+
+async function encerrar(usuario, contaId) {
+  return request(app).delete(`/contas/${contaId}`).set('Authorization', usuario.autorizacao)
+}
+
+test('depois de encerrar a conta, o usuário consegue abrir outra', async () => {
+  const antiga = await criarConta(maria, 'maria@pix')
+  assert.equal((await encerrar(maria, antiga.body.id)).status, 200)
+
+  const semConta = await request(app).get('/contas/minha').set('Authorization', maria.autorizacao)
+  assert.equal(semConta.status, 404)
+
+  const nova = await criarConta(maria, 'maria.nova@pix')
+  assert.equal(nova.status, 201)
+  assert.notEqual(nova.body.id, antiga.body.id)
+
+  const minha = await request(app).get('/contas/minha').set('Authorization', maria.autorizacao)
+  assert.equal(minha.status, 200)
+  assert.equal(minha.body.id, nova.body.id)
+})
+
+test('a chave pix de uma conta encerrada pode ser usada de novo', async () => {
+  const antiga = await criarConta(maria, 'maria@pix')
+  await encerrar(maria, antiga.body.id)
+
+  const nova = await criarConta(maria, 'maria@pix')
+  assert.equal(nova.status, 201)
+  assert.equal(nova.body.chave_pix, 'maria@pix')
+})
+
+test('a conta encerrada continua com o extrato e não volta a ser a conta ativa', async () => {
+  const antiga = await criarConta(maria, 'maria@pix')
+  await encerrar(maria, antiga.body.id)
+  await criarConta(maria, 'maria.nova@pix')
+
+  const encerrada = await request(app).get(`/contas/${antiga.body.id}`).set('Authorization', maria.autorizacao)
+  assert.equal(encerrada.status, 200)
+  assert.ok(encerrada.body.encerrada_em)
+
+  const extrato = await request(app).get(`/contas/${antiga.body.id}/extrato`).set('Authorization', maria.autorizacao)
+  assert.equal(extrato.status, 200)
+})
+
+test('com uma conta ativa, a segunda continua recusada: 409', async () => {
+  const antiga = await criarConta(maria, 'maria@pix')
+  await encerrar(maria, antiga.body.id)
+  await criarConta(maria, 'maria.nova@pix')
+
+  const terceira = await criarConta(maria, 'maria.outra@pix')
+  assert.equal(terceira.status, 409)
+  assert.equal(terceira.body.erro, 'você já tem uma conta')
+})
+
+test('chave de outra pessoa com conta ativa continua recusada: 409', async () => {
+  await criarConta(maria, 'maria@pix')
+  const joao = novoUsuario()
+
+  const resposta = await criarConta(joao, 'maria@pix')
+  assert.equal(resposta.status, 409)
+  assert.equal(resposta.body.erro, 'chave pix já cadastrada')
+})
