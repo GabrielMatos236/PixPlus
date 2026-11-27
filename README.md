@@ -267,3 +267,17 @@ Conta com saldo abaixo de zero é o furo da versão ingênua.
 - Nenhum serviço acessa o banco de outro.
 - Todo PR tem revisão de uma pessoa, e a `main` sempre sobe com um comando.
 - Commits em português, rotas em minúsculas.
+
+## Escalar (réplicas)
+
+```powershell
+docker compose up -d --build --scale contas=4 --scale transferencias=4 --scale worker-outbox=2
+```
+
+O nginx resolve o nome do serviço de novo a cada 5 s e reparte as requisições entre as réplicas. Pra ver qual réplica atendeu, olhe o cabeçalho `X-Replica`:
+
+```powershell
+1..40 | ForEach-Object { curl.exe -si http://localhost/contas/saude | Select-String "X-Replica" } | Group-Object | Select-Object Count, Name
+```
+
+O worker usa `FOR UPDATE SKIP LOCKED`, então duas cópias nunca pegam o mesmo evento. A prova com 10.000 eventos está no PR #55 e em `docs/testes-worker-outbox.md`. Evidência das réplicas em `docs/evidencia-scale.txt`.
