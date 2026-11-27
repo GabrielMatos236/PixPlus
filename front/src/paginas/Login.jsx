@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '../firebase'
 import { entrarNoZync, mensagemFirebase } from '../entrada'
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -16,18 +16,18 @@ export default function Login() {
     setErro('')
     setOcupado(true)
     try {
-      const credencial = await signInWithEmailAndPassword(auth, email, senha)
+            const credencial = await signInWithEmailAndPassword(auth, email, senha)
+      if (!credencial.user.emailVerified) {
+        await signOut(auth)
+        setErro('Confirme seu e-mail antes de entrar. Enviamos um link quando você criou a conta.')
+        return
+      }
       try {
         await entrarNoZync(credencial.user)
         navegar('/')
       } catch (err) {
-        // 422 com "detalhes": existe no Firebase mas falta o cadastro no Auth
-        // (o cadastro caiu no meio). Vai pra tela de completar.
-        if (err.status === 422 && err.dados?.detalhes) navegar('/completar')
-        else throw err
+        setErro(mensagemFirebase(err))
       }
-    } catch (err) {
-      setErro(mensagemFirebase(err))
     } finally {
       setOcupado(false)
     }
