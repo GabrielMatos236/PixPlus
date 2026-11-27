@@ -26,17 +26,18 @@ export default function Inicio() {
   const [semConta, setSemConta] = useState(false)
   const [saldo, setSaldo] = useState(0)
   const [lancamentos, setLancamentos] = useState([])
+  const [avisos, setAvisos] = useState([])
   const [mostrar, setMostrar] = useState(true)
   const [valor, setValor] = useState('')
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(true)
   const [depositando, setDepositando] = useState(false)
 
-    const sair = useCallback(() => {
+  const sair = useCallback(() => {
     localStorage.removeItem('token')
     signOut(auth)
     navegar('/login')
-   }, [navegar])
+  }, [navegar])
 
   const carregarConta = useCallback(async (c) => {
     const [s, e] = await Promise.all([
@@ -47,6 +48,16 @@ export default function Inicio() {
     setLancamentos(e.lancamentos)
   }, [])
 
+  // se o serviço de avisos falhar, a tela inicial continua funcionando
+  const carregarAvisos = useCallback(async () => {
+    try {
+      const r = await chamar('/notificacoes?limite=10')
+      setAvisos(r.notificacoes)
+    } catch (err) {
+      if (err.status === 401) sair()
+    }
+  }, [sair])
+
   useEffect(() => {
     async function iniciar() {
       try {
@@ -55,6 +66,7 @@ export default function Inicio() {
           const c = await chamar('/contas/minha')
           setConta(c)
           await carregarConta(c)
+          await carregarAvisos()
         } catch (err) {
           if (err.status === 404) setSemConta(true)
           else throw err
@@ -67,9 +79,16 @@ export default function Inicio() {
       }
     }
     iniciar()
-  }, [carregarConta, sair])
+  }, [carregarConta, carregarAvisos, sair])
 
-    async function depositar(e) {
+  // o aviso chega depois do Pix (passa pela outbox e pelo worker), então a tela confere de novo a cada 10 s
+  useEffect(() => {
+    if (!conta) return
+    const timer = setInterval(carregarAvisos, 10000)
+    return () => clearInterval(timer)
+  }, [conta, carregarAvisos])
+
+  async function depositar(e) {
     e.preventDefault()
     if (depositando) return // clique duplo: o segundo não faz nada
     setErro('')
@@ -91,6 +110,17 @@ export default function Inicio() {
     }
   }
 
+  async function marcarLido(aviso) {
+    if (aviso.lida) return
+    try {
+      const nova = await chamar(`/notificacoes/${aviso.id}`, { metodo: 'PATCH', corpo: { lida: true } })
+      setAvisos((lista) => lista.map((a) => (a.id === nova.id ? nova : a)))
+    } catch (err) {
+      if (err.status === 401) sair()
+      else setErro(err.message)
+    }
+  }
+
   if (carregando) return <p className="sub">Carregando...</p>
 
   if (semConta) {
@@ -106,6 +136,8 @@ export default function Inicio() {
       />
     )
   }
+
+  const naoLidas = avisos.filter((a) => !a.lida).length
 
   return (
     <div className="inicio">
@@ -127,8 +159,8 @@ export default function Inicio() {
         <div className="saldo">{mostrar ? reais(saldo) : 'R$ ••••'}</div>
         <span className="chave">Chave Pix: {conta?.chave_pix}</span>
       </section>
-          <Link to="/pix" className="botao-pix">Enviar Pix</Link>
-          
+      <Link to="/pix" className="botao-pix">Enviar Pix</Link>
+
       <form className="deposito" onSubmit={depositar}>
         <input
           inputMode="decimal"
@@ -142,6 +174,27 @@ export default function Inicio() {
         </button>
       </form>
       {erro && <p role="alert">{erro}</p>}
+
+      <section className="avisos">
+        <h2>
+          Avisos {naoLidas > 0 && <span className="contador">{naoLidas}</span>}
+        </h2>
+        {avisos.length === 0 && <p className="sub">Nenhum aviso por enquanto.</p>}
+        <ul>
+          {avisos.map((a) => (
+            <li key={a.id}>
+              <button
+                type="button"
+                className={a.lida ? 'aviso lido' : 'aviso'}
+                onClick={() => marcarLido(a)}
+              >
+                <span className="desc">{a.mensagem}</span>
+                <span className="data">{dataHora(a.criada_em)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="movimentacoes">
         <h2>Últimas movimentações</h2>

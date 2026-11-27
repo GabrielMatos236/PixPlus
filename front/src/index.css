@@ -92,3 +92,13 @@ button[type='submit']:hover { background: var(--zync-ouro-claro); }
 .botao-pix:hover { background: var(--zync-ouro-claro); color: var(--zync-texto-sobre-ouro); }
 .comprovante { background: var(--zync-superficie); border-radius: var(--zync-raio-card); padding: 20px; display: flex; flex-direction: column; gap: 4px; }
 button:disabled { opacity: 0.6; cursor: not-allowed; }
+.avisos { background: var(--zync-superficie); border-radius: var(--zync-raio-card); padding: 20px; }
+.avisos h2 { margin: 0 0 8px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+.avisos ul { list-style: none; margin: 0; padding: 0; }
+.avisos li { border-bottom: 1px solid var(--zync-borda); }
+.avisos li:last-child { border-bottom: 0; }
+.aviso { width: 100%; background: none; border: 0; color: inherit; text-align: left; padding: 12px 0; display: flex; flex-direction: column; gap: 2px; }
+.aviso:not(.lido) { border-left: 3px solid var(--zync-ouro); padding-left: 12px; }
+.aviso:not(.lido) .desc { font-weight: 600; }
+.aviso.lido { opacity: 0.65; }
+.contador { background: var(--zync-ouro); color: var(--zync-texto-sobre-ouro); border-radius: 999px; font-size: 12px; padding: 2px 8px; }
